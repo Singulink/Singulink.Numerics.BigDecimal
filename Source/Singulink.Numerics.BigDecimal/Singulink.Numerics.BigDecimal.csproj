@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>Singulink.Numerics</RootNamespace>
+    <Version>0.9.0</Version>
+    <Authors>Singulink</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>© Singulink. All rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/Singulink/Singulink.Numerics.BigDecimal</PackageProjectUrl>
+    <PackageIcon>Singulink Icon 128x128.png</PackageIcon>
+    <Description>Adds support for arbitrarily large precision decimal values.</Description>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="stylecop.json" />
+    <None Include="..\..\Resources\Singulink Icon 128x128.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="stylecop.json" />
+  </ItemGroup>
+
+</Project>
