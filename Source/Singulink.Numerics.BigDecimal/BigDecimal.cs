@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Singulink.Numerics
@@ -13,8 +14,8 @@ namespace Singulink.Numerics
     /// <para>
     /// All operations between <see cref="BigDecimal"/> values are exact except for division. If the result of the division does not fit into the precision of
     /// the dividend or divisor then a maximum precision of <see cref="MaxExtendedDivisionPrecision"/> is used. You should typically specify the maximum
-    /// extended precision to use for a each division operation by calling the <see cref="Divide(BigDecimal, BigDecimal, int)"/> method instead of using the
-    /// division operator.</para>
+    /// extended precision to use for a each division operation that may result in an arbitrary number of digits by calling the <see cref="Divide(BigDecimal,
+    /// BigDecimal, int)"/> method instead of using the division operator.</para>
     /// <para>
     /// Addition and subtraction are fully commutitive and associative for all data types as long as the <c>useExactConversion</c> parameter value does not
     /// change when adding or subtracting converted floating point type values. This makes <see cref="BigDecimal"/> a great data type to store aggregate totals
@@ -29,23 +30,22 @@ namespace Singulink.Numerics
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
     {
+        #region Static Fields/Properties
+
         private static readonly BigDecimal Half = 0.5m;
         private static readonly BigDecimal MinusHalf = -0.5m;
 
-        private static int _maxDivisionPrecision = 60;
-
         /// <summary>
-        /// Gets or sets the default maximum extended precision to use for division operations if the result does not fit into the precision of the dividend or
-        /// divisor. Default value is 60.
+        /// Gets the default maximum extended precision to use for division operations if the result does not fit into the precision of the dividend or
+        /// divisor. The current value is 50 but is subject to change.
         /// </summary>
         /// <remarks>
-        /// <para>It is recommended that you specify the maximum extended precision to use for a each division operation by calling the <see
-        /// cref="Divide(BigDecimal, BigDecimal, int)"/> method instead of using the division operator which relies on this shared static value.</para>
+        /// <para>It is recommended that you specify the maximum extended precision to use for each division operation that could require more precision than
+        /// the greater of (dividend precision, divisor precision, this property value) by calling the <see cref="Divide(BigDecimal, BigDecimal, int)"/> method
+        /// instead of using the division operator which uses on this shared static value. It is also more performant to use that method with a smaller
+        /// precision if 50 significant digits are not required.</para>
         /// </remarks>
-        public static int MaxExtendedDivisionPrecision {
-            get => _maxDivisionPrecision;
-            set => _maxDivisionPrecision = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-        }
+        public static int MaxExtendedDivisionPrecision => 50;
 
         /// <summary>
         /// Gets a value representing zero (0).
@@ -62,80 +62,117 @@ namespace Singulink.Numerics
         /// </summary>
         public static BigDecimal MinusOne => BigInteger.MinusOne;
 
-        /// <summary>
-        /// Gets the mantissa portion of the decimal.
-        /// </summary>
-        public BigInteger Mantissa { get; }
+        #endregion
 
-        /// <summary>
-        /// Gets the exponent portion of the decimal.
-        /// </summary>
-        public int Exponent { get; }
+        // Do not change the order of fields
+
+        private readonly IntHolder? _precisionCache;
+        private readonly BigInteger _mantissa;
+        private readonly int _exponent;
 
         /// <summary>
         /// Gets a value indicating whether the current value is 0.
         /// </summary>
-        public bool IsZero => Mantissa.IsZero;
+        public bool IsZero => _mantissa.IsZero;
 
         /// <summary>
         /// Gets a value indicating whether the current value is 1.
         /// </summary>
-        public bool IsOne => Mantissa.IsOne && Exponent == 0;
+        public bool IsOne => _mantissa.IsOne && _exponent == 0;
 
         /// <summary>
         /// Gets a number indicating the sign (negative, positive, or zero) of the current value.
         /// </summary>
-        public int Sign => Mantissa.Sign;
+        public int Sign => _mantissa.Sign;
 
-        private string DebuggerDisplay => ToString("G32", CultureInfo.InvariantCulture);
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string DebuggerDisplay => ToString("G100", CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Gets a cached precision calculated from the mantissa digit count.
+        /// </summary>
+        private int Precision {
+            get {
+                if (_precisionCache == null)
+                    return 1;
+
+                if (_precisionCache.Value != 0)
+                    return _precisionCache.Value;
+
+                return GetAndCachePrecision(this);
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                int GetAndCachePrecision(BigDecimal @this)
+                {
+                    var value = BigInteger.Abs(@this._mantissa);
+
+                    if (value.IsZero || value.IsOne)
+                        return 1;
+
+                    // TODO: Possibly reimplement Log10 with more efficient integer based log10.
+
+                    int precision = (int)Math.Ceiling(BigInteger.Log10(value));
+
+                    // We can skip this because the mantissa is always normalized so it does not contain any trailing zeros, but I'm leaving this here so that
+                    // there the correct generally applicable implementation is documented:
+                    // if (value == BigInteger.Pow(10, digits))
+                    //     precision++;
+
+                    @this._precisionCache!.Value = precision;
+                    return precision;
+                }
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BigDecimal"/> struct.
         /// </summary>
         public BigDecimal(BigInteger mantissa, int exponent)
         {
-            Mantissa = mantissa;
-            Exponent = exponent;
+            _mantissa = mantissa;
+            _precisionCache = new();
 
-            if (Mantissa.IsZero) {
-                Exponent = 0;
+            if (_mantissa.IsZero) {
+                _exponent = 0;
             }
             else {
+                _exponent = exponent;
+
                 // Normalize trailing zeros in 3 steps to reduce iterations for large numbers with lots of trailing zeros
 
-                if (mantissa >= 1_000_000_000_000_000_000) {
+                if (mantissa >= 1_000_000_000_000_000_000 || mantissa <= -1_000_000_000_000_000_000) {
                     while (true) {
-                        var shortened = BigInteger.DivRem(Mantissa, 1_000_000_000_000_000_000, out BigInteger remainder);
+                        var shortened = BigInteger.DivRem(_mantissa, 1_000_000_000_000_000_000, out BigInteger remainder);
 
                         if (!remainder.IsZero)
                             break;
 
-                        Mantissa = shortened;
-                        Exponent += 18;
+                        _mantissa = shortened;
+                        _exponent += 18;
                     }
                 }
 
-                if (mantissa >= 1_000_000) {
+                if (mantissa >= 1_000_000 || mantissa <= -1_000_000) {
                     while (true) {
-                        var shortened = BigInteger.DivRem(Mantissa, 1_000_000, out BigInteger remainder);
+                        var shortened = BigInteger.DivRem(_mantissa, 1_000_000, out BigInteger remainder);
 
                         if (!remainder.IsZero)
                             break;
 
-                        Mantissa = shortened;
-                        Exponent += 6;
+                        _mantissa = shortened;
+                        _exponent += 6;
                     }
                 }
 
-                if (mantissa >= 10) {
+                if (mantissa >= 10 || mantissa <= -10) {
                     while (true) {
-                        var shortened = BigInteger.DivRem(Mantissa, 10, out BigInteger remainder);
+                        var shortened = BigInteger.DivRem(_mantissa, 10, out BigInteger remainder);
 
                         if (!remainder.IsZero)
                             break;
 
-                        Mantissa = shortened;
-                        Exponent++;
+                        _mantissa = shortened;
+                        _exponent++;
                     }
                 }
             }
@@ -195,7 +232,7 @@ namespace Singulink.Numerics
 
         public static explicit operator BigInteger(BigDecimal value)
         {
-            return value.Exponent < 0 ? value.Mantissa / BigInteger.Pow(10, -value.Exponent) : value.Mantissa * BigInteger.Pow(10, value.Exponent);
+            return value._exponent < 0 ? value._mantissa / BigInteger.Pow(10, -value._exponent) : value._mantissa * BigInteger.Pow(10, value._exponent);
         }
 
         /// <summary>
@@ -224,7 +261,7 @@ namespace Singulink.Numerics
 
         public static BigDecimal operator +(BigDecimal value) => value;
 
-        public static BigDecimal operator -(BigDecimal value) => new BigDecimal(BigInteger.Negate(value.Mantissa), value.Exponent);
+        public static BigDecimal operator -(BigDecimal value) => new BigDecimal(BigInteger.Negate(value._mantissa), value._exponent);
 
         public static BigDecimal operator ++(BigDecimal value) => value + 1;
 
@@ -232,41 +269,41 @@ namespace Singulink.Numerics
 
         public static BigDecimal operator +(BigDecimal left, BigDecimal right)
         {
-            return left.Exponent > right.Exponent
-                ? new BigDecimal(AlignExponent(left, right) + right.Mantissa, right.Exponent)
-                : new BigDecimal(AlignExponent(right, left) + left.Mantissa, left.Exponent);
+            return left._exponent > right._exponent
+                ? new BigDecimal(AlignExponent(left, right) + right._mantissa, right._exponent)
+                : new BigDecimal(AlignExponent(right, left) + left._mantissa, left._exponent);
         }
 
         public static BigDecimal operator -(BigDecimal left, BigDecimal right) => left + (-right);
 
-        public static BigDecimal operator *(BigDecimal left, BigDecimal right) => new BigDecimal(left.Mantissa * right.Mantissa, left.Exponent + right.Exponent);
+        public static BigDecimal operator *(BigDecimal left, BigDecimal right) => new BigDecimal(left._mantissa * right._mantissa, left._exponent + right._exponent);
 
         public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor) => Divide(dividend, divisor, MaxExtendedDivisionPrecision);
 
         public static BigDecimal operator %(BigDecimal left, BigDecimal right) => left - (right * Floor(left / right));
 
-        public static bool operator ==(BigDecimal left, BigDecimal right) => left.Exponent == right.Exponent && left.Mantissa == right.Mantissa;
+        public static bool operator ==(BigDecimal left, BigDecimal right) => left._exponent == right._exponent && left._mantissa == right._mantissa;
 
-        public static bool operator !=(BigDecimal left, BigDecimal right) => left.Exponent != right.Exponent || left.Mantissa != right.Mantissa;
+        public static bool operator !=(BigDecimal left, BigDecimal right) => left._exponent != right._exponent || left._mantissa != right._mantissa;
 
         public static bool operator <(BigDecimal left, BigDecimal right)
         {
-            return left.Exponent > right.Exponent ? AlignExponent(left, right) < right.Mantissa : left.Mantissa < AlignExponent(right, left);
+            return left._exponent > right._exponent ? AlignExponent(left, right) < right._mantissa : left._mantissa < AlignExponent(right, left);
         }
 
         public static bool operator >(BigDecimal left, BigDecimal right)
         {
-            return left.Exponent > right.Exponent ? AlignExponent(left, right) > right.Mantissa : left.Mantissa > AlignExponent(right, left);
+            return left._exponent > right._exponent ? AlignExponent(left, right) > right._mantissa : left._mantissa > AlignExponent(right, left);
         }
 
         public static bool operator <=(BigDecimal left, BigDecimal right)
         {
-            return left.Exponent > right.Exponent ? AlignExponent(left, right) <= right.Mantissa : left.Mantissa <= AlignExponent(right, left);
+            return left._exponent > right._exponent ? AlignExponent(left, right) <= right._mantissa : left._mantissa <= AlignExponent(right, left);
         }
 
         public static bool operator >=(BigDecimal left, BigDecimal right)
         {
-            return left.Exponent > right.Exponent ? AlignExponent(left, right) >= right.Mantissa : left.Mantissa >= AlignExponent(right, left);
+            return left._exponent > right._exponent ? AlignExponent(left, right) >= right._mantissa : left._mantissa >= AlignExponent(right, left);
         }
 
         #endregion
@@ -372,7 +409,7 @@ namespace Singulink.Numerics
         /// <summary>
         /// Gets the absolute value of the given value.
         /// </summary>
-        public static BigDecimal Abs(BigDecimal value) => value.Mantissa.Sign >= 0 ? value : -value;
+        public static BigDecimal Abs(BigDecimal value) => value._mantissa.Sign >= 0 ? value : -value;
 
         /// <summary>
         /// Rounds down to the nearest integral value.
@@ -381,7 +418,7 @@ namespace Singulink.Numerics
         {
             var result = Truncate(value);
 
-            if (value.Mantissa.Sign < 0 && value != result)
+            if (value._mantissa.Sign < 0 && value != result)
                 result -= 1;
 
             return result;
@@ -394,7 +431,7 @@ namespace Singulink.Numerics
         {
             var result = Truncate(value);
 
-            if (value.Mantissa.Sign > 0 && value != result)
+            if (value._mantissa.Sign > 0 && value != result)
                 result += 1;
 
             return result;
@@ -409,18 +446,15 @@ namespace Singulink.Numerics
         /// precision is used.</param>
         public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision)
         {
-            int dividendMantissaDigits = dividend.GetMantissaDigitCount();
-            int divisorMantissaDigits = divisor.GetMantissaDigitCount();
-
             // Never reduce precision of the result compared to input values but cap precision extensions to maxExtendedPrecision
-            int maxPrecision = Math.Max(Math.Max(maxExtendedPrecision, dividendMantissaDigits), divisorMantissaDigits);
-            int exponentChange = maxPrecision - (dividendMantissaDigits - divisorMantissaDigits);
+            int maxPrecision = Math.Max(Math.Max(maxExtendedPrecision, dividend.Precision), divisor.Precision);
+            int exponentChange = maxPrecision - (dividend.Precision - divisor.Precision);
 
             if (exponentChange < 0)
                 exponentChange = 0;
 
-            var dividendMantissa = dividend.Mantissa * BigInteger.Pow(10, exponentChange);
-            return new BigDecimal(dividendMantissa / divisor.Mantissa, dividend.Exponent - divisor.Exponent - exponentChange);
+            var dividendMantissa = dividend._mantissa * BigInteger.Pow(10, exponentChange);
+            return new BigDecimal(dividendMantissa / divisor._mantissa, dividend._exponent - divisor._exponent - exponentChange);
         }
 
         /// <summary>
@@ -472,10 +506,10 @@ namespace Singulink.Numerics
         /// </summary>
         public static BigDecimal Truncate(BigDecimal value)
         {
-            if (value.Exponent >= 0)
+            if (value._exponent >= 0)
                 return value;
 
-            return new BigDecimal(value.Mantissa / BigInteger.Pow(10, -value.Exponent), 0);
+            return new BigDecimal(value._mantissa / BigInteger.Pow(10, -value._exponent), 0);
         }
 
         /// <summary>
@@ -486,20 +520,12 @@ namespace Singulink.Numerics
             if (precision < 1)
                 throw new ArgumentOutOfRangeException(nameof(precision));
 
-            int currentPrecision = value.GetMantissaDigitCount();
-
-            if (currentPrecision <= precision)
+            if (value.Precision <= precision)
                 return value;
 
-            return TruncateToPrecision(value, precision, currentPrecision);
-        }
+            int extraDigits = value.Precision - precision;
 
-        private static BigDecimal TruncateToPrecision(BigDecimal value, int precision, int currentPrecision)
-        {
-            Debug.Assert(precision < currentPrecision, "precision must be less than the current precision");
-
-            int extraDigits = currentPrecision - precision;
-            return new BigDecimal(value.Mantissa / BigInteger.Pow(10, extraDigits), value.Exponent + extraDigits);
+            return new BigDecimal(value._mantissa / BigInteger.Pow(10, extraDigits), value._exponent + extraDigits);
         }
 
         #endregion
@@ -529,15 +555,14 @@ namespace Singulink.Numerics
             if (decimals < 0)
                 throw new ArgumentOutOfRangeException(nameof(decimals));
 
-            int removeDecimals = -value.Exponent + decimals;
+            int removeDecimals = -value._exponent - decimals;
 
             if (removeDecimals <= 0)
                 return value;
 
-            int currentPrecision = value.GetMantissaDigitCount();
-            int precision = currentPrecision - removeDecimals;
+            int precision = value.Precision - removeDecimals;
 
-            return RoundToPrecision(value, precision, mode, currentPrecision);
+            return RoundToPrecision(value, precision, mode);
         }
 
         /// <summary>
@@ -553,19 +578,10 @@ namespace Singulink.Numerics
             if (precision < 1)
                 throw new ArgumentOutOfRangeException(nameof(precision));
 
-            int currentPrecision = value.GetMantissaDigitCount();
-
-            if (currentPrecision <= precision)
+            if (value.Precision <= precision)
                 return value;
 
-            return RoundToPrecision(value, precision, mode, currentPrecision);
-        }
-
-        private static BigDecimal RoundToPrecision(BigDecimal value, int precision, MidpointRounding mode, int currentPrecision)
-        {
-            Debug.Assert(precision < currentPrecision, "precision must be less than the current precision");
-
-            int firstTruncatedPosition = currentPrecision + value.Exponent - precision;
+            int firstTruncatedPosition = value.Precision + value._exponent - precision;
 
             // Used for shifting values to/from the rounded position.
             // Multiply to go from rounded position => unit position, divide to go from unit position => rounded position.
@@ -579,7 +595,7 @@ namespace Singulink.Numerics
             else // firstTruncatedPosition < 0
                 shift = BigInteger.Pow(10, -firstTruncatedPosition);
 
-            var result = TruncateToPrecision(value, precision, currentPrecision);
+            var result = TruncateToPrecision(value, precision);
             var diff = (value - result) * shift;
 
             Debug.Assert(!diff.IsZero, "unexpected 0 diff for rounding");
@@ -599,7 +615,7 @@ namespace Singulink.Numerics
                 case MidpointRounding.AwayFromZero:
                     return positive ? AddToRoundedResultPosition(One) : AddToRoundedResultPosition(MinusOne);
                 case MidpointRounding.ToEven:
-                    if (firstTruncatedPosition < result.Exponent || result.Mantissa.IsEven)
+                    if (firstTruncatedPosition < result._exponent || result._mantissa.IsEven)
                         return result;
 
                     return positive ? AddToRoundedResultPosition(One) : AddToRoundedResultPosition(MinusOne);
@@ -607,7 +623,13 @@ namespace Singulink.Numerics
 
             throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
 
-            BigDecimal AddToRoundedResultPosition(BigDecimal val) => result + (val / shift);
+            BigDecimal AddToRoundedResultPosition(BigDecimal val)
+            {
+                var shifted = val / shift;
+                var added = result + shifted;
+                Console.WriteLine(added);
+                return added;
+            }
         }
 
         #endregion
@@ -619,19 +641,19 @@ namespace Singulink.Numerics
         /// </summary>
         public int CompareTo(BigDecimal other)
         {
-            return Exponent > other.Exponent ? AlignExponent(this, other).CompareTo(other.Mantissa) : Mantissa.CompareTo(AlignExponent(other, this));
+            return _exponent > other._exponent ? AlignExponent(this, other).CompareTo(other._mantissa) : _mantissa.CompareTo(AlignExponent(other, this));
         }
 
         /// <summary>
         /// Indicates whether this value and the specified other value are equal.
         /// </summary>
-        public bool Equals(BigDecimal other) => other.Mantissa.Equals(Mantissa) && other.Exponent == Exponent;
+        public bool Equals(BigDecimal other) => other._mantissa.Equals(_mantissa) && other._exponent == _exponent;
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => obj is BigDecimal bigDecimal && Equals(bigDecimal);
 
         /// <inheritdoc/>
-        public override int GetHashCode() => HashCode.Combine(Mantissa, Exponent);
+        public override int GetHashCode() => HashCode.Combine(_mantissa, _exponent);
 
         /// <summary>
         /// Returns an exponential notation string representation of this value.
@@ -685,15 +707,14 @@ namespace Singulink.Numerics
                 }
                 else {
                     value = RoundToPrecision(this, precisionSpecifier.GetValueOrDefault());
-                    int actualPrecision = value.GetMantissaDigitCount();
 
-                    if (GetEstimatedFullPrecisionLength(value, actualPrecision) > GetEstimatedExponentialLength(actualPrecision)) {
-                        int exponentDigits = Math.Min(actualPrecision, precisionSpecifier.GetValueOrDefault()) - 1;
+                    if (GetEstimatedFullDecimalLength(value) > GetEstimatedExponentialLength(value)) {
+                        int exponentDigits = Math.Min(value.Precision, precisionSpecifier.GetValueOrDefault()) - 1;
                         return GetExponentialString(value, exponentDigits, formatProvider);
                     }
                 }
 
-                if (value.Exponent >= 0)
+                if (value._exponent >= 0)
                     return GetNonDecimalString(value, "G", formatProvider);
 
                 return GetDecimalString(value, "G", formatProvider);
@@ -701,24 +722,21 @@ namespace Singulink.Numerics
 
             throw new FormatException($"Unknown format specifier '{formatSpecifier}'");
 
-            static int GetEstimatedFullPrecisionLength(BigDecimal value, int actualPrecision)
+            static int GetEstimatedFullDecimalLength(BigDecimal value)
             {
-                if (value.Exponent >= 0)
-                    return actualPrecision + value.Exponent;
+                if (value._exponent >= 0)
+                    return value.Precision + value._exponent;
 
-                return actualPrecision + Math.Max(0, -value.Exponent - actualPrecision) + 1; // digits + additional leading zeros + decimal separator
+                return value.Precision + Math.Max(0, -value._exponent - value.Precision) + 1; // digits + additional leading zeros + decimal separator
             }
 
-            static int GetEstimatedExponentialLength(int actualPrecision)
-            {
-                return actualPrecision + 5; // .E+99
-            }
+            static int GetEstimatedExponentialLength(BigDecimal value) => value.Precision + 5; // .E+99
 
             static string GetExponentialString(BigDecimal value, int? precisionSpecifier, IFormatProvider? formatProvider)
             {
-                string result = value.Mantissa.ToString("E" + precisionSpecifier, formatProvider);
+                string result = value._mantissa.ToString("E" + precisionSpecifier, formatProvider);
                 int eIndex = result.LastIndexOf("E", StringComparison.Ordinal);
-                int exponent = int.Parse(result[(eIndex + 1)..], formatProvider) + value.Exponent;
+                int exponent = int.Parse(result[(eIndex + 1)..], formatProvider) + value._exponent;
 
                 return $"{result[..(eIndex + 1)]}{(exponent > 0 ? "+" : string.Empty)}{exponent}";
             }
@@ -730,12 +748,11 @@ namespace Singulink.Numerics
                 var wholePart = Truncate(value);
 
                 var decimalPart = Abs(value - wholePart);
-                int decimalPartDigits = decimalPart.GetMantissaDigitCount();
-                int decimalPartShift = -decimalPart.Exponent;
-                int decimalPartLeadingZeros = decimalPartShift - decimalPartDigits;
-                decimalPart = decimalPart.Mantissa;
+                int decimalPartShift = -decimalPart._exponent;
+                int decimalPartLeadingZeros = decimalPartShift - decimalPart.Precision;
+                decimalPart = decimalPart._mantissa;
 
-                Debug.Assert(decimalPart.Exponent == 0, "unexpected transformed decimal part exponent");
+                Debug.Assert(decimalPart._exponent == 0, "unexpected transformed decimal part exponent");
 
                 string wholePartString;
 
@@ -767,8 +784,8 @@ namespace Singulink.Numerics
 
             static string GetNonDecimalString(BigDecimal value, string format, IFormatProvider? formatProvider)
             {
-                Debug.Assert(value.Exponent >= 0, "value contains decimal digits");
-                return value.Mantissa.ToString(format, formatProvider) + new string('0', value.Exponent);
+                Debug.Assert(value._exponent >= 0, "value contains decimal digits");
+                return value._mantissa.ToString(format, formatProvider) + new string('0', value._exponent);
             }
         }
 
@@ -781,24 +798,17 @@ namespace Singulink.Numerics
         /// </summary>
         private static BigInteger AlignExponent(BigDecimal value, BigDecimal reference)
         {
-            Debug.Assert(value.Exponent >= reference.Exponent, "value exponent must be greater than or equal to reference exponent");
-            return value.Mantissa * BigInteger.Pow(10, value.Exponent - reference.Exponent);
+            Debug.Assert(value._exponent >= reference._exponent, "value exponent must be greater than or equal to reference exponent");
+            return value._mantissa * BigInteger.Pow(10, value._exponent - reference._exponent);
         }
 
-        private int GetMantissaDigitCount()
+        #endregion
+
+        #region Nested types
+
+        private class IntHolder
         {
-            var value = BigInteger.Abs(Mantissa);
-
-            if (value.IsZero || value.IsOne)
-                return 1;
-
-            int digits = (int)Math.Ceiling(BigInteger.Log10(value));
-
-            // We can skip this because the mantissa is always normalized so it does not contain any trailing zeros:
-            // if (value == BigInteger.Pow(10, digits))
-            //     digits++;
-
-            return digits;
+            public int Value { get; set; }
         }
 
         #endregion

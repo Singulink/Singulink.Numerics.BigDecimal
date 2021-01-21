@@ -7,7 +7,7 @@ namespace Singulink.Numerics.Tests
     public class RoundingTests
     {
         [TestMethod]
-        public void RoundLower()
+        public void RoundUnderHalf()
         {
             Assert.AreEqual(1234m, BigDecimal.Round(1234.1m, 0));
             Assert.AreEqual(-1234m, BigDecimal.Round(-1234.1m, 0));
@@ -20,13 +20,13 @@ namespace Singulink.Numerics.Tests
         }
 
         [TestMethod]
-        public void RoundHigher()
+        public void RoundOverHalf()
         {
             Assert.AreEqual(1235m, BigDecimal.Round(1234.7m, 0));
             Assert.AreEqual(-1235m, BigDecimal.Round(-1234.7m, 0));
 
-            Assert.AreEqual(1234.567m, BigDecimal.Round(1234.5677m, 3));
-            Assert.AreEqual(-1234.567m, BigDecimal.Round(-1234.5677m, 3));
+            Assert.AreEqual(1234.568m, BigDecimal.Round(1234.5678m, 3));
+            Assert.AreEqual(-1234.568m, BigDecimal.Round(-1234.5678m, 3));
 
             Assert.AreEqual(1240, BigDecimal.RoundToPrecision(1236.456m, 3));
             Assert.AreEqual(-1240, BigDecimal.RoundToPrecision(-1236.456m, 3));

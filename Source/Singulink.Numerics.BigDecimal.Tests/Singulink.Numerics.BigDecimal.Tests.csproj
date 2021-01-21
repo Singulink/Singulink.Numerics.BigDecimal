@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
     <RootNamespace>Singulink.Numerics.Tests</RootNamespace>
     <NoWarn>1591</NoWarn>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
