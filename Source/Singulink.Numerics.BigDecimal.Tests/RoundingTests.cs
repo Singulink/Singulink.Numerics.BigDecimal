@@ -15,8 +15,8 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(1234.567m, BigDecimal.Round(1234.5671m, 3));
             Assert.AreEqual(-1234.567m, BigDecimal.Round(-1234.5671m, 3));
 
-            Assert.AreEqual(1230, BigDecimal.RoundToPrecision(1234.456m, 3));
-            Assert.AreEqual(-1230, BigDecimal.RoundToPrecision(-1234.456m, 3));
+            Assert.AreEqual(1230m, BigDecimal.RoundToPrecision(1234.456m, 3));
+            Assert.AreEqual(-1230m, BigDecimal.RoundToPrecision(-1234.456m, 3));
         }
 
         [TestMethod]
@@ -28,8 +28,8 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(1234.568m, BigDecimal.Round(1234.5678m, 3));
             Assert.AreEqual(-1234.568m, BigDecimal.Round(-1234.5678m, 3));
 
-            Assert.AreEqual(1240, BigDecimal.RoundToPrecision(1236.456m, 3));
-            Assert.AreEqual(-1240, BigDecimal.RoundToPrecision(-1236.456m, 3));
+            Assert.AreEqual(1240m, BigDecimal.RoundToPrecision(1236.456m, 3));
+            Assert.AreEqual(-1240m, BigDecimal.RoundToPrecision(-1236.456m, 3));
         }
 
         [TestMethod]

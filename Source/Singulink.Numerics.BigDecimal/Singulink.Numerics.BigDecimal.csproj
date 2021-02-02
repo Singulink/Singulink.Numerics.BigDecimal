@@ -31,6 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>..\Singulink.Numerics.BigDecimal.Tests\obj\Debug\net5\annotated\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>

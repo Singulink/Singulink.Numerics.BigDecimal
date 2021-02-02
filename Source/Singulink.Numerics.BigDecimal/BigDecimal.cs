@@ -15,16 +15,18 @@ namespace Singulink.Numerics
     /// </summary>
     /// <remarks>
     /// <para>
-    /// All operations between <see cref="BigDecimal"/> values are exact except for division. If the result of the division does not fit into the precision of
-    /// the dividend or divisor then a maximum precision of <see cref="MaxExtendedDivisionPrecision"/> is used. You should typically specify the maximum
-    /// extended precision to use for a each division operation that may result in an arbitrary number of digits by calling the <see cref="Divide(BigDecimal,
-    /// BigDecimal, int)"/> method instead of using the division operator.</para>
+    /// All operations between <see cref="BigDecimal"/> values are exact except division in the case of a repeating decimal result. If the result of the
+    /// division cannot be exactly represented in decimal form then the largest of the dividend precision, divisor precision or <see
+    /// cref="MaxExtendedDivisionPrecision"/> is used to represent the result. You can specify the maximum extended precision to use for each division
+    /// operation by calling the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/> method or use the <see cref="DivideExact(BigDecimal,
+    /// BigDecimal)"/> / <see cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods for division operations that are expected to return exact
+    /// results. The division operator first attempts to do an exact result division and falls back to the extended precision division method.</para>
     /// <para>
-    /// Addition and subtraction are fully commutitive and associative for all data types as long as the <c>useExactConversion</c> parameter value does not
-    /// change when adding or subtracting converted floating point type values. This makes <see cref="BigDecimal"/> a great data type to store aggregate totals
-    /// that can freely add and subtract values without accruing inaccuracies over time.</para>
+    /// Addition and subtraction are fully commutitive and associative for all data types as long as the <c>exactConversion</c> parameter value does not change
+    /// when adding or subtracting converted floating point type values. This makes <see cref="BigDecimal"/> a great data type to store aggregate totals that
+    /// can freely add and subtract values without accruing inaccuracies over time.</para>
     /// <para>
-    /// Conversions from floating point types <see cref="float"/> and <see cref="double"/> are not exact when casting. This results in a <see
+    /// Conversions from floating point types <see cref="float"/> and <see cref="double"/> are not "exact" when casting. This results in a <see
     /// cref="BigDecimal"/> value that matches the output of ToString() on the floating point type as this is probably what is usually expected. The <see
     /// cref="FromDouble(double, bool)"/> method is provided which accepts a parameter indicating whether an exact conversion should be used if control over
     /// this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of 0.1d
@@ -41,18 +43,19 @@ namespace Singulink.Numerics
         private const string FromFloatFormat = "R";
         private const NumberStyles FromFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
 
-        private const string FromDecimalFormat = "G0";
-        private const NumberStyles FromDecimalStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
+        // private const string FromDecimalFormat = "G0";
+        // private const NumberStyles FromDecimalStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
+
+        // private static readonly BigInteger BigInt2 = 2;
+        private static readonly BigInteger BigInt5 = 5;
 
         /// <summary>
-        /// Gets the default maximum extended precision to use for division operations if the result does not fit into the precision of the dividend or
-        /// divisor. The current value is 50 but is subject to change.
+        /// Gets the maximum extended precision used by the division operator if the result is not exact (i.e. has repeating decimals). If the dividend or
+        /// divisor precision is greater than this value then that is used instead. The current value is 50 but is subject to change.
         /// </summary>
         /// <remarks>
-        /// <para>It is recommended that you specify the maximum extended precision to use for each division operation that could require more precision than
-        /// the greater of (dividend precision, divisor precision, this property value) by calling the <see cref="Divide(BigDecimal, BigDecimal, int)"/> method
-        /// instead of using the division operator which uses on this shared static value. It is also more performant to use that method with a smaller
-        /// precision if 50 significant digits are not required.</para>
+        /// <para>For better control over the result of each division operation see the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/>,
+        /// <see cref="DivideExact(BigDecimal, BigDecimal)"/> and <see cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods.</para>
         /// </remarks>
         public static int MaxExtendedDivisionPrecision => 50;
 
@@ -208,7 +211,16 @@ namespace Singulink.Numerics
 
         public static implicit operator BigDecimal(decimal value)
         {
-            return Parse(value.ToString(FromDecimalFormat, CultureInfo.InvariantCulture), FromDecimalStyle, CultureInfo.InvariantCulture);
+            // return Parse(value.ToString(FromDecimalFormat, CultureInfo.InvariantCulture), FromDecimalStyle, CultureInfo.InvariantCulture);
+
+            ref var decimalData = ref Unsafe.As<decimal, DecimalData>(ref value);
+
+            var mantissa = (new BigInteger(decimalData.Hi) << 8) + decimalData.Lo;
+
+            if (!decimalData.IsPositive)
+                mantissa = -mantissa;
+
+            return new BigDecimal(mantissa, -decimalData.Scale);
         }
 
         #endregion
@@ -293,7 +305,13 @@ namespace Singulink.Numerics
             return new BigDecimal(left._mantissa * right._mantissa, left._exponent + right._exponent);
         }
 
-        public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor) => Divide(dividend, divisor, MaxExtendedDivisionPrecision);
+        public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor)
+        {
+            if (TryDivideExact(dividend, divisor, out var result))
+                return result;
+
+            return Divide(dividend, divisor, MaxExtendedDivisionPrecision);
+        }
 
         public static BigDecimal operator %(BigDecimal left, BigDecimal right) => left - (right * Floor(left / right));
 
@@ -330,24 +348,24 @@ namespace Singulink.Numerics
         /// <summary>
         /// Converts a <see cref="float"/> into a <see cref="BigDecimal"/> using the given conversion mode.
         /// </summary>
-        public static BigDecimal FromSingle(float value, bool useExactConversion) => FromDouble(value, useExactConversion);
+        public static BigDecimal FromSingle(float value, bool exactConversion) => FromDouble(value, exactConversion);
 
         /// <summary>
         /// Converts a <see cref="double"/> into a <see cref="BigDecimal"/> using the given conversion mode.
         /// </summary>
-        public static BigDecimal FromDouble(double value, bool useExactConversion)
+        public static BigDecimal FromDouble(double value, bool exactConversion)
         {
-            if (!useExactConversion)
+            if (double.IsNaN(value))
+                throw new ArgumentException("Floating point value cannot be NaN.", nameof(value));
+
+            if (double.IsNegativeInfinity(value) || double.IsPositiveInfinity(value))
+                throw new ArgumentOutOfRangeException(nameof(value), "Cannot convert floating point infinity values.");
+
+            if (!exactConversion)
                 return Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture), FromFloatStyle, CultureInfo.InvariantCulture);
 
             unchecked {
                 // Based on Jon Skeet's DoubleConverter:
-
-                if (double.IsNaN(value))
-                    throw new ArgumentException("Floating point value cannot be NaN.", nameof(value));
-
-                if (double.IsNegativeInfinity(value) || double.IsPositiveInfinity(value))
-                    throw new ArgumentOutOfRangeException(nameof(value), "Cannot convert floating point infinity values.");
 
                 // Translate the double into sign, exponent and mantissa.
                 long bits = BitConverter.DoubleToInt64Bits(value);
@@ -355,10 +373,8 @@ namespace Singulink.Numerics
                 int exponent = (int)((bits >> 52) & 0x7ffL);
                 long mantissa = bits & 0xfffffffffffffL;
 
-                // Subnormal numbers; exponent is effectively one higher,
-                // but there's no extra normalisation bit in the mantissa
-                // Normal numbers; leave exponent as it is but add extra
-                // bit to the front of the mantissa
+                // Subnormal numbers: exponent is effectively one higher, but there's no extra normalisation bit in the mantissa Normal numbers.
+                // Leave exponent as it is but add extra bit to the front of the mantissa
                 if (exponent == 0)
                     exponent++;
                 else
@@ -367,12 +383,12 @@ namespace Singulink.Numerics
                 if (mantissa == 0)
                     return Zero;
 
-                // Bias the exponent. It's actually biased by 1023, but we're
-                // treating the mantissa as m.0 rather than 0.m, so we need
-                // to subtract another 52 from it.
+                // Bias the exponent. It's actually biased by 1023, but we're treating the mantissa as m.0 rather than 0.m, so we need to subtract another 52
+                // from it.
                 exponent -= 1075;
 
                 // Normalize
+
                 while ((mantissa & 1) == 0) { // mantissa is even
                     mantissa >>= 1;
                     exponent++;
@@ -381,20 +397,38 @@ namespace Singulink.Numerics
                 if (negative)
                     mantissa = -mantissa;
 
-                var result = new BigDecimal(mantissa, 0);
+                // Rest of initial implementation:
+
+                // var result = new BigDecimal(mantissa, 0);
 
                 // If the exponent is less than 0, we need to repeatedly
                 // divide by 2, otherwise, we need to repeatedly multiply by 2
-                if (exponent < 0) {
-                    for (int i = 0; i < -exponent; i++)
-                        result /= 2;
-                }
-                else {
-                    for (int i = 0; i < exponent; i++)
-                        result *= 2;
-                }
+                // if (exponent < 0) {
+                //     for (int i = 0; i < -exponent; i++)
+                //         result /= 2;
+                // }
+                // else {
+                //     for (int i = 0; i < exponent; i++)
+                //         result *= 2;
+                // }
+                //
+                // return result;
 
-                return result;
+                // More optimized implementation:
+
+                var resultMantissa = (BigInteger)mantissa;
+
+                if (exponent == 0) {
+                    return new BigDecimal(resultMantissa, 0, new SharedPrecisionHolder());
+                }
+                else if (exponent < 0) {
+                    resultMantissa *= BigInteger.Pow(BigInt5, -exponent);
+                    return new BigDecimal(resultMantissa, exponent);
+                }
+                else { // exponent > 0
+                    resultMantissa *= BigInteger.One << exponent; // BigInteger.Pow(BigInt2, exponent);
+                    return new BigDecimal(resultMantissa, 0);
+                }
             }
         }
 
@@ -434,11 +468,11 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Divides two values using the specified maximum extended precision.
+        /// Performs a division operation using the specified maximum extended precision.
         /// </summary>
         /// <param name="dividend">The dividend of the division operation.</param>
         /// <param name="divisor">The divisor of the division operation.</param>
-        /// <param name="maxExtendedPrecision">If the result of the division does not fit into the precision of the dividend or divisor then this maximum
+        /// <param name="maxExtendedPrecision">If the result of the division does not fit into the precision of the dividend or divisor then this extended
         /// precision is used.</param>
         /// <param name="mode">The rounding mode to use or <see langword="null"/> to truncate the result.</param>
         public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision, MidpointRounding? mode = MidpointRounding.ToEven)
@@ -452,17 +486,53 @@ namespace Singulink.Numerics
             if (divisor.IsOne)
                 return dividend;
 
+            if (dividend.IsZero)
+                return Zero;
+
             // Never reduce precision of the result compared to input values but cap precision extensions to maxExtendedPrecision
 
             int maxPrecision = Math.Max(Math.Max(maxExtendedPrecision, dividend.Precision), divisor.Precision);
             int exponentChange = Math.Max(0, maxPrecision - dividend.Precision + divisor.Precision);
             var dividendMantissa = dividend._mantissa * BigIntPow10.Get(exponentChange);
+            int exponent = dividend._exponent - divisor._exponent - exponentChange;
 
-            return new BigDecimal(dividendMantissa / divisor._mantissa, dividend._exponent - divisor._exponent - exponentChange);
+            if (mode == null) // truncate
+                return new BigDecimal(dividendMantissa / divisor._mantissa, exponent);
+
+            var mantissa = BigInteger.DivRem(dividendMantissa, divisor._mantissa, out var remainder);
+
+            if (!remainder.IsZero) {
+                int compareResult = (BigInteger.Abs(remainder) << 1).CompareTo(BigInteger.Abs(divisor._mantissa));
+                int sign = dividend.Sign * divisor.Sign;
+
+                if (compareResult > 0) {
+                    RoundAwayFromZero(ref mantissa, sign);
+                }
+                else if (compareResult == 0) {
+                    switch (mode.GetValueOrDefault()) {
+                        case MidpointRounding.AwayFromZero:
+                            RoundAwayFromZero(ref mantissa, sign);
+                            break;
+                        case MidpointRounding.ToEven:
+                            if (!mantissa.IsEven)
+                                RoundAwayFromZero(ref mantissa, sign);
+                            break;
+                        default:
+                            throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
+                    }
+                }
+            }
+
+            return new BigDecimal(mantissa, dividend._exponent - divisor._exponent - exponentChange);
+
+            static void RoundAwayFromZero(ref BigInteger value, int sign)
+            {
+                value = sign > 0 ? value + BigInteger.One : value - BigInteger.One;
+            }
         }
 
         /// <summary>
-        /// Divides two values that result in an exact decimal answer (i.e. no repeating decimals).
+        /// Performs a division operation that results in an exact decimal answer (i.e. no repeating decimals).
         /// </summary>
         /// <param name="dividend">The dividend of the division operation.</param>
         /// <param name="divisor">The divisor of the division operation.</param>
@@ -476,7 +546,7 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Divides two values that result in an exact decimal answer (i.e. no repeating decimals).
+        /// Performs a division operation that results in an exact decimal answer (i.e. no repeating decimals).
         /// </summary>
         /// <param name="dividend">The dividend of the division operation.</param>
         /// <param name="divisor">The divisor of the division operation.</param>
@@ -486,6 +556,11 @@ namespace Singulink.Numerics
         {
             if (divisor.IsZero)
                 throw new DivideByZeroException();
+
+            if (dividend.IsZero) {
+                result = Zero;
+                return true;
+            }
 
             if (BigInteger.Abs(divisor._mantissa).IsOne) {
                 result = divisor switch {
@@ -501,10 +576,10 @@ namespace Singulink.Numerics
             int exponentChange = Math.Max(0, maxPrecision - dividend.Precision + divisor.Precision);
             var dividendMantissa = dividend._mantissa * BigIntPow10.Get(exponentChange);
 
-            var resultMantissa = BigInteger.DivRem(dividendMantissa, divisor._mantissa, out var remainder);
+            var mantissa = BigInteger.DivRem(dividendMantissa, divisor._mantissa, out var remainder);
 
             if (remainder.IsZero) {
-                result = new BigDecimal(resultMantissa, dividend._exponent - divisor._exponent - exponentChange);
+                result = new BigDecimal(mantissa, dividend._exponent - divisor._exponent - exponentChange);
                 return true;
             }
 
@@ -670,9 +745,9 @@ namespace Singulink.Numerics
                         return result;
 
                     return RoundAwayFromZero();
+                default:
+                    throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
             }
-
-            throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
 
             BigDecimal RoundAwayFromZero()
             {
@@ -683,7 +758,7 @@ namespace Singulink.Numerics
 
         #endregion
 
-        #region String Parsing and Conversion
+        #region String Conversion Methods
 
         /// <summary>
         /// Converts the string representation of a number to its decimal equivalent.
@@ -859,8 +934,7 @@ namespace Singulink.Numerics
 
             bool TryParseExponent(ref ReadOnlySpan<char> s, out int result)
             {
-                if (style.HasFlag(NumberStyles.AllowExponent))
-                {
+                if (style.HasFlag(NumberStyles.AllowExponent)) {
                     int index = s.LastIndexOfAny('E', 'e');
 
                     if (index >= 0) {
@@ -1145,7 +1219,7 @@ namespace Singulink.Numerics
 
         #endregion
 
-        #region Standard Object Methods
+        #region Equality and Comparison Methods
 
         /// <summary>
         /// Compares this to another <see cref="BigDecimal"/>.
@@ -1177,79 +1251,6 @@ namespace Singulink.Numerics
         {
             Debug.Assert(value._exponent >= reference._exponent, "value exponent must be greater than or equal to reference exponent");
             return value._mantissa * BigIntPow10.Get(value._exponent - reference._exponent);
-        }
-
-        #endregion
-
-        #region Nested types
-
-        private class SharedPrecisionHolder
-        {
-            private int _value;
-
-            public static SharedPrecisionHolder One { get; } = new SharedPrecisionHolder { Value = 1 };
-
-            /// <summary>
-            /// Gets a cached or new precision holder with the given value.
-            /// </summary>
-            public static SharedPrecisionHolder Get(int value)
-            {
-                return value == 1 ? One : new SharedPrecisionHolder(value);
-            }
-
-            public SharedPrecisionHolder()
-            {
-            }
-
-            public SharedPrecisionHolder(int value)
-            {
-                Debug.Assert(value > 0, "specified value should be greater than 0");
-                Value = value;
-            }
-
-            public int Value {
-                get => _value;
-                set {
-                    // Better to leave this as a runtime check for safety as very bad things can happen if this is not honored
-                    if (_value != 0)
-                        throw new InvalidOperationException("Shared value has already been set.");
-
-                    Debug.Assert(value > 0, "specified value should be greater than 0");
-                    _value = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Provides a cache of BigInteger powers of 10.
-        /// </summary>
-        private static class BigIntPow10
-        {
-            // Num bytes needed to store a number with x digits = Log(10)/Log(2)/8 * x = 0.415 * x
-            // 1000 entries * 500 avg entry digits = max 500k digits in memory * 0.415 = ~208kb max cache memory usage if all numbers are used.
-            private const int MaxCachedPower = 1000;
-
-            private static readonly BigInteger[] _cache = new BigInteger[MaxCachedPower + 1];
-            private static readonly BigInteger Ten = new BigInteger(10);
-
-            public static BigInteger Get(int exponent)
-            {
-                BigInteger value;
-
-                if (exponent <= MaxCachedPower) {
-                    value = _cache[exponent];
-
-                    if (!value.IsZero)
-                        return value;
-                }
-
-                value = BigInteger.Pow(Ten, exponent);
-
-                if (exponent <= MaxCachedPower)
-                    _cache[exponent] = value;
-
-                return value;
-            }
         }
 
         #endregion
