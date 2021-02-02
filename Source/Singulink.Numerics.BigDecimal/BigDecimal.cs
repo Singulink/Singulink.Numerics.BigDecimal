@@ -33,7 +33,7 @@ namespace Singulink.Numerics
     /// converts to the <see cref="BigDecimal"/> value 0.1000000000000000055511151231257827021181583404541015625 instead of 0.1.</para>
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
+    public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
     {
         #region Static Contants/Fields/Properties
 
@@ -80,7 +80,7 @@ namespace Singulink.Numerics
 
         private readonly BigInteger _mantissa;
         private readonly int _exponent;
-        private SharedPrecisionHolder _precision;
+        private readonly SharedPrecisionHolder _precision;
 
         /// <summary>
         /// Gets a value indicating whether the current value is 0.
@@ -115,21 +115,7 @@ namespace Singulink.Numerics
                 {
                     Debug.Assert(@this._precision != null && @this._precision.Value == 0, "precision is already cached");
 
-                    var absMantissa = BigInteger.Abs(@this._mantissa);
-
-                    if (absMantissa.IsZero || absMantissa.IsOne) {
-                        @this._precision = SharedPrecisionHolder.One;
-                        return 1;
-                    }
-
-                    int precision = (int)Math.Ceiling(BigInteger.Log10(absMantissa));
-
-                    // Note: we can skip this because the mantissa is always normalized so it does not contain any trailing zeros, but leaving this here so
-                    // that there the correct generally applicable implementation is documented:
-
-                    // if (value == BigInteger.Pow(10, digits))
-                    //     precision++;
-
+                    int precision = CountDigits(@this._mantissa);
                     @this._precision.Value = precision;
                     return precision;
                 }
@@ -363,9 +349,8 @@ namespace Singulink.Numerics
                 return Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture), FromFloatStyle, CultureInfo.InvariantCulture);
 
             unchecked {
-                // Based on Jon Skeet's DoubleConverter:
+                // Based loosely on Jon Skeet's DoubleConverter:
 
-                // Translate the double into sign, exponent and mantissa.
                 long bits = BitConverter.DoubleToInt64Bits(value);
                 bool negative = bits < 0;
                 int exponent = (int)((bits >> 52) & 0x7ffL);
@@ -394,25 +379,6 @@ namespace Singulink.Numerics
 
                 if (negative)
                     mantissa = -mantissa;
-
-                // Rest of initial implementation:
-
-                // var result = new BigDecimal(mantissa, 0);
-
-                // If the exponent is less than 0, we need to repeatedly
-                // divide by 2, otherwise, we need to repeatedly multiply by 2
-                // if (exponent < 0) {
-                //     for (int i = 0; i < -exponent; i++)
-                //         result /= 2;
-                // }
-                // else {
-                //     for (int i = 0; i < exponent; i++)
-                //         result *= 2;
-                // }
-                //
-                // return result;
-
-                // More optimized implementation:
 
                 var resultMantissa = (BigInteger)mantissa;
 
@@ -1216,6 +1182,19 @@ namespace Singulink.Numerics
             return result;
 
             static BigInteger RoundAwayFromZero(BigInteger value, int sign) => sign > 0 ? value + BigInteger.One : value - BigInteger.One;
+        }
+
+        private static int CountDigits(BigInteger value)
+        {
+            value = BigInteger.Abs(value);
+
+            if (value.IsZero || value.IsOne)
+                return 1;
+
+            int exp = (int)Math.Ceiling(BigInteger.Log10(value));
+            var test = BigIntPow10.Get(exp);
+
+            return value >= test ? exp + 1 : exp;
         }
 
         #endregion
