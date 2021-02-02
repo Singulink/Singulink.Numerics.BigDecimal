@@ -38,10 +38,10 @@ namespace Singulink.Numerics
         #region Static Contants/Fields/Properties
 
         private const string ToDecimalOrFloatFormat = "R";
-        private const NumberStyles ToDecimalOrFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
+        private const NumberStyles ToDecimalOrFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
 
         private const string FromFloatFormat = "R";
-        private const NumberStyles FromFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
+        private const NumberStyles FromFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
 
         // private const string FromDecimalFormat = "G0";
         // private const NumberStyles FromDecimalStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
@@ -719,6 +719,9 @@ namespace Singulink.Numerics
             {
                 result = fractional.GetValueOrDefault() + whole.GetValueOrDefault();
 
+                if (sign < 0)
+                    result = -result;
+
                 if (exponent != 0)
                     result *= Pow10(exponent);
 
@@ -838,8 +841,9 @@ namespace Singulink.Numerics
                     int index = s.LastIndexOfAny('E', 'e');
 
                     if (index >= 0) {
+                        var e = s[(index + 1)..];
                         s = s[..index];
-                        return int.TryParse(s[(index + 1)..], NumberStyles.AllowLeadingSign, formatProvider, out result);
+                        return int.TryParse(e, NumberStyles.AllowLeadingSign, formatProvider, out result);
                     }
                 }
 
