@@ -7,7 +7,7 @@ namespace Singulink.Numerics
     {
         private int _value;
 
-        public static SharedPrecisionHolder One { get; } = new SharedPrecisionHolder { Value = 1 };
+        public static SharedPrecisionHolder One { get; } = new SharedPrecisionHolder(1);
 
         /// <summary>
         /// Gets a cached or new precision holder with the given value.
@@ -24,7 +24,7 @@ namespace Singulink.Numerics
         public SharedPrecisionHolder(int value)
         {
             Debug.Assert(value > 0, "specified value should be greater than 0");
-            Value = value;
+            _value = value;
         }
 
         public int Value {
