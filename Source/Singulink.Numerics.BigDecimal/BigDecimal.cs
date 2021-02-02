@@ -74,11 +74,6 @@ namespace Singulink.Numerics
         /// </summary>
         public static BigDecimal MinusOne => BigInteger.MinusOne;
 
-        /// <summary>
-        /// Gets a value representing half (0.5).
-        /// </summary>
-        public static BigDecimal Half => 0.5m;
-
         #endregion
 
         // Do not change the order of fields
@@ -296,6 +291,9 @@ namespace Singulink.Numerics
 
         public static BigDecimal operator *(BigDecimal left, BigDecimal right)
         {
+            if (left.IsZero || right.IsZero)
+                return Zero;
+
             if (left.IsOne)
                 return right;
 
@@ -423,10 +421,10 @@ namespace Singulink.Numerics
                 }
                 else if (exponent < 0) {
                     resultMantissa *= BigInteger.Pow(BigInt5, -exponent);
-                    return new BigDecimal(resultMantissa, exponent);
+                    return new BigDecimal(resultMantissa, exponent, new SharedPrecisionHolder());
                 }
                 else { // exponent > 0
-                    resultMantissa *= BigInteger.One << exponent; // BigInteger.Pow(BigInt2, exponent);
+                    resultMantissa <<= exponent; // *= BigInteger.Pow(BigInt2, exponent);
                     return new BigDecimal(resultMantissa, 0);
                 }
             }
@@ -499,36 +497,7 @@ namespace Singulink.Numerics
             if (mode == null) // truncate
                 return new BigDecimal(dividendMantissa / divisor._mantissa, exponent);
 
-            var mantissa = BigInteger.DivRem(dividendMantissa, divisor._mantissa, out var remainder);
-
-            if (!remainder.IsZero) {
-                int compareResult = (BigInteger.Abs(remainder) << 1).CompareTo(BigInteger.Abs(divisor._mantissa));
-                int sign = dividend.Sign * divisor.Sign;
-
-                if (compareResult > 0) {
-                    RoundAwayFromZero(ref mantissa, sign);
-                }
-                else if (compareResult == 0) {
-                    switch (mode.GetValueOrDefault()) {
-                        case MidpointRounding.AwayFromZero:
-                            RoundAwayFromZero(ref mantissa, sign);
-                            break;
-                        case MidpointRounding.ToEven:
-                            if (!mantissa.IsEven)
-                                RoundAwayFromZero(ref mantissa, sign);
-                            break;
-                        default:
-                            throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
-                    }
-                }
-            }
-
-            return new BigDecimal(mantissa, dividend._exponent - divisor._exponent - exponentChange);
-
-            static void RoundAwayFromZero(ref BigInteger value, int sign)
-            {
-                value = sign > 0 ? value + BigInteger.One : value - BigInteger.One;
-            }
+            return new BigDecimal(DivideAndRound(dividendMantissa, divisor._mantissa, mode.GetValueOrDefault()), exponent);
         }
 
         /// <summary>
@@ -655,10 +624,10 @@ namespace Singulink.Numerics
             if (precision < 1)
                 throw new ArgumentOutOfRangeException(nameof(precision));
 
-            if (value.Precision <= precision)
-                return value;
-
             int extraDigits = value.Precision - precision;
+
+            if (extraDigits <= 0)
+                return value;
 
             return new BigDecimal(value._mantissa / BigIntPow10.Get(extraDigits), value._exponent + extraDigits);
         }
@@ -713,47 +682,12 @@ namespace Singulink.Numerics
             if (precision < 1)
                 throw new ArgumentOutOfRangeException(nameof(precision));
 
-            if (value.Precision <= precision)
+            int extraDigits = value.Precision - precision;
+
+            if (extraDigits <= 0)
                 return value;
 
-            int firstTruncatedPosition = value.Precision + value._exponent - precision;
-
-            // Used for shifting values to/from the rounded position.
-            // Multiply to go from rounded position => unit position, divide to go from unit position => rounded position.
-
-            bool positive = value.Sign > 0;
-            var result = TruncateToPrecision(value, precision);
-            var diff = Abs((value - result) * Pow10(-firstTruncatedPosition));
-
-            Debug.Assert(!diff.IsZero, "diff should never be zero if precision is being reduced.");
-
-            int diffCompareResult = diff.CompareTo(Half);
-
-            if (diffCompareResult < 0)
-                return result;
-
-            if (diffCompareResult > 0)
-                return RoundAwayFromZero();
-
-            // diff is exactly 0.5:
-
-            switch (mode) {
-                case MidpointRounding.AwayFromZero:
-                    return RoundAwayFromZero();
-                case MidpointRounding.ToEven:
-                    if (firstTruncatedPosition < result._exponent || result._mantissa.IsEven)
-                        return result;
-
-                    return RoundAwayFromZero();
-                default:
-                    throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
-            }
-
-            BigDecimal RoundAwayFromZero()
-            {
-                var shifted = Pow10(firstTruncatedPosition);
-                return positive ? result + shifted : result - shifted;
-            }
+            return new BigDecimal(DivideAndRound(value._mantissa, BigIntPow10.Get(extraDigits), mode), value._exponent + extraDigits);
         }
 
         #endregion
@@ -1251,6 +1185,37 @@ namespace Singulink.Numerics
         {
             Debug.Assert(value._exponent >= reference._exponent, "value exponent must be greater than or equal to reference exponent");
             return value._mantissa * BigIntPow10.Get(value._exponent - reference._exponent);
+        }
+
+        private static BigInteger DivideAndRound(BigInteger dividend, BigInteger divisor, MidpointRounding mode)
+        {
+            var result = BigInteger.DivRem(dividend, divisor, out var remainder);
+
+            if (!remainder.IsZero) {
+                int compareResult = (BigInteger.Abs(remainder) << 1).CompareTo(BigInteger.Abs(divisor));
+                int sign = dividend.Sign * divisor.Sign;
+
+                if (compareResult > 0) {
+                    return RoundAwayFromZero(result, sign);
+                }
+                else if (compareResult == 0) {
+                    switch (mode) {
+                        case MidpointRounding.AwayFromZero:
+                            return RoundAwayFromZero(result, sign);
+                        case MidpointRounding.ToEven:
+                            if (!result.IsEven)
+                                return RoundAwayFromZero(result, sign);
+
+                            return result;
+                        default:
+                            throw new ArgumentException($"Unsupported rounding mode '{mode}'.", nameof(mode));
+                    }
+                }
+            }
+
+            return result;
+
+            static BigInteger RoundAwayFromZero(BigInteger value, int sign) => sign > 0 ? value + BigInteger.One : value - BigInteger.One;
         }
 
         #endregion
