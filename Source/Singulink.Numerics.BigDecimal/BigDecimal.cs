@@ -189,8 +189,6 @@ namespace Singulink.Numerics
 
         public static implicit operator BigDecimal(decimal value)
         {
-            // return Parse(value.ToString(FromDecimalFormat, CultureInfo.InvariantCulture), FromDecimalStyle, CultureInfo.InvariantCulture);
-
             ref var decimalData = ref Unsafe.As<decimal, DecimalData>(ref value);
 
             var mantissa = (new BigInteger(decimalData.Hi) << 8) + decimalData.Lo;
