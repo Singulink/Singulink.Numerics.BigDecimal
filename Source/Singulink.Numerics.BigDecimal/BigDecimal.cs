@@ -17,22 +17,17 @@ namespace Singulink.Numerics
     /// cref="MaxExtendedDivisionPrecision"/> is used to represent the result. You can specify the maximum extended precision to use for each division
     /// operation by calling the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/> method or use the <see cref="DivideExact(BigDecimal,
     /// BigDecimal)"/> / <see cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods for division operations that are expected to return exact
-    /// results. The stanrd division operator (<c>/</c>) first attempts to do an exact result division and falls back to the extended precision division
+    /// results. The standard division operator (<c>/</c>) first attempts to do an exact result division and falls back to the extended precision division
     /// method.</para>
     /// <para>
-    /// Addition and subtraction are fully commutitive and associative for all converted data types (as long as the exact conversion setting is stays the same
-    /// when working with floating point type values). This makes <see cref="BigDecimal"/> a great data type to store aggregate totals that can freely add and
-    /// subtract values without accruing inaccuracies over time.</para>
+    /// Addition and subtraction are fully commutitive and associative for all converted data types. This makes <see cref="BigDecimal"/> a great data type to
+    /// store aggregate totals that can freely add and subtract values without accruing inaccuracies over time.</para>
     /// <para>
-    /// Conversions from floating point types (i.e. <see cref="float"/> and <see cref="double"/>) are converted to their exact decimal representations when
-    /// using casting operators. This results in BigDecimal values that often contain many more digits than the <c>ToString()</c> representation of the
-    /// floating point values, i.e. a <see cref="double"/> value of 0.1d converts to the <see cref="BigDecimal"/> value
-    /// <c>0.1000000000000000055511151231257827021181583404541015625</c> instead of <c>0.1</c>. If you want a <see cref="BigDecimal"/> value that matchs the
-    /// reduced precision <c>ToString()</c> output of the floating point value you can use the <see cref="FromDouble(double, bool)"/> and <see
-    /// cref="FromSingle(float, bool)"/> methods which accepts a parameter indicating whether an exact conversion should be performed.</para>
-    /// <para>
-    /// Keep in mind that exact conversions are an order of manitude faster than the string matching conversions. If you don't need the full precision
-    /// value.</para>
+    /// Conversions from floating point types (<see cref="float"/> and <see cref="double"/>) are not "exact" when casting. This results in a <see
+    /// cref="BigDecimal"/> value that matches the output of <c>ToString()</c> on the floating point type as this is probably what is usually expected. The
+    /// <see cref="FromDouble(double, bool)"/> method is provided which accepts a parameter indicating whether an exact conversion should be used if control
+    /// over this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of 0.1d
+    /// converts to the <see cref="BigDecimal"/> value 0.1000000000000000055511151231257827021181583404541015625 instead of 0.1.</para>
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
