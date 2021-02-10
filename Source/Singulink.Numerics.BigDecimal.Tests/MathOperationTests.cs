@@ -9,7 +9,7 @@ namespace Singulink.Numerics.Tests
         [TestMethod]
         public void Addition()
         {
-            Assert.AreEqual(1000m, (BigDecimal)800 + 200);
+            Assert.AreEqual(2000m, (BigDecimal)1800 + 200);
         }
 
         [TestMethod]
@@ -25,6 +25,13 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(0.1m, BigDecimal.One / 10);
             Assert.AreEqual(0.01m, BigDecimal.One / 100);
             Assert.AreEqual(0.001m, BigDecimal.One / 1000);
+        }
+
+        [TestMethod]
+        public void ExtendedDivision()
+        {
+            Assert.AreEqual(0.33333m, BigDecimal.Divide(1, 3, 5));
+            Assert.AreEqual(0.66667m, BigDecimal.Divide(2, 3, 5));
         }
     }
 }
