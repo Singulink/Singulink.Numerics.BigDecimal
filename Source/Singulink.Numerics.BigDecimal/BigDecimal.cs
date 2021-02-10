@@ -12,13 +12,13 @@ namespace Singulink.Numerics
     /// </summary>
     /// <remarks>
     /// <para>
-    /// All operations between <see cref="BigDecimal"/> values are exact except division in the case of a repeating decimal result. If the result of the
-    /// division cannot be exactly represented in decimal form then the largest of the dividend precision, divisor precision or <see
-    /// cref="MaxExtendedDivisionPrecision"/> is used to represent the result. You can specify the maximum extended precision to use for each division
-    /// operation by calling the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/> method or use the <see cref="DivideExact(BigDecimal,
-    /// BigDecimal)"/> / <see cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods for division operations that are expected to return exact
-    /// results. The standard division operator (<c>/</c>) first attempts to do an exact result division and falls back to the extended precision division
-    /// method.</para>
+    /// All operations on <see cref="BigDecimal"/> values are exact except division in the case of a repeating decimal result. If the result of the division
+    /// cannot be exactly represented in decimal form then the largest of the dividend precision, divisor precision and the specified maximum extended
+    /// precision is used to represent the result. You can specify the maximum extended precision to use for each division operation by calling the <see
+    /// cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/> method or use the <see cref="DivideExact(BigDecimal, BigDecimal)"/> / <see
+    /// cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods for division operations that are expected to return exact results. The standard
+    /// division operator (<c>/</c>) first attempts to do an exact division and falls back to extended precision division using <see
+    /// cref="MaxExtendedDivisionPrecision"/> as the maximum extended precision parameter.</para>
     /// <para>
     /// Addition and subtraction are fully commutitive and associative for all converted data types. This makes <see cref="BigDecimal"/> a great data type to
     /// store aggregate totals that can freely add and subtract values without accruing inaccuracies over time.</para>
@@ -48,7 +48,7 @@ namespace Singulink.Numerics
 
         /// <summary>
         /// Gets the maximum extended precision used by the division operator if the result is not exact (i.e. has repeating decimals). If the dividend or
-        /// divisor precision is greater than this value then that is used instead. The current value is 50 but is subject to change.
+        /// divisor precision is greater then that value is used instead. The current value is 50 but is subject to change.
         /// </summary>
         /// <remarks>
         /// <para>For better control over the result of each division operation see the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/>,
