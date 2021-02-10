@@ -1,0 +1,48 @@
+name: build and test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  debug:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET 5
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.100
+    - name: Install dependencies
+      run: dotnet restore
+      working-directory: Source
+    - name: Build
+      run: dotnet build --configuration Debug --no-restore
+      working-directory: Source
+    - name: Test
+      run: dotnet test --configuration Debug --no-build --verbosity normal
+      working-directory: Source
+
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET 5
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.100
+    - name: Install dependencies
+      run: dotnet restore
+      working-directory: Source
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      working-directory: Source
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
+      working-directory: Source
