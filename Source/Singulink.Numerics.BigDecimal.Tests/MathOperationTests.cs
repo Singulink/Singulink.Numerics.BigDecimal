@@ -33,5 +33,21 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(0.33333m, BigDecimal.Divide(1, 3, 5));
             Assert.AreEqual(0.66667m, BigDecimal.Divide(2, 3, 5));
         }
+
+        [TestMethod]
+        public void Pow()
+        {
+            Assert.AreEqual(1m, BigDecimal.Pow(1234, 0));
+            Assert.AreEqual(0.0009765625m, BigDecimal.Pow(0.5, 10));
+            Assert.AreEqual(-216000000m, BigDecimal.Pow(-600, 3));
+        }
+
+        [TestMethod]
+        public void Pow10()
+        {
+            Assert.AreEqual(1m, BigDecimal.Pow10(0));
+            Assert.AreEqual(100000m, BigDecimal.Pow10(5));
+            Assert.AreEqual(0.00001m, BigDecimal.Pow10(-5));
+        }
     }
 }

@@ -537,43 +537,14 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Returns <c>e</c> raised to the specified exponent.
+        /// Returns the specified basis raised to the specified exponent. Exponent must be greater than or equal to 0.
         /// </summary>
-        public static BigDecimal Exp(double exponent, bool useExactFloatConversion = false) => Pow(Math.E, exponent, useExactFloatConversion);
-
-        /// <summary>
-        /// Returns the specified basis raised to the specified exponent.
-        /// </summary>
-        public static BigDecimal Pow(double basis, double exponent, bool useExactFloatConversion = false)
+        public static BigDecimal Pow(BigDecimal basis, int exponent)
         {
-            if (exponent == 0)
-                return One;
+            if (exponent < 0)
+                throw new ArgumentOutOfRangeException(nameof(exponent));
 
-            var value = One;
-            double exponentStep = exponent > 0 ? Math.Min(100, exponent) : Math.Max(-100, exponent);
-
-            // Get largest exponent step that results in a multiplier that fits into a double
-            // 307 = approx +/- exponent range for double
-
-            while (GetNumBase10Digits(basis, exponentStep) > 307)
-                exponentStep /= 10;
-
-            var multiplier = FromDouble(Math.Pow(basis, exponentStep), useExactFloatConversion);
-
-            if (Math.Abs(exponent) > Math.Abs(exponentStep)) {
-                do {
-                    value *= multiplier;
-                    exponent -= exponentStep;
-                }
-                while (Math.Abs(exponent) > Math.Abs(exponentStep));
-
-                multiplier = FromDouble(Math.Pow(basis, exponent), useExactFloatConversion);
-            }
-
-            value *= multiplier;
-            return value;
-
-            static int GetNumBase10Digits(double basis, double exponent) => (int)Math.Ceiling(Math.Abs(exponent / Math.Log(10, basis)));
+            return new BigDecimal(BigInteger.Pow(basis._mantissa, exponent), basis._exponent * exponent);
         }
 
         /// <summary>
