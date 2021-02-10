@@ -27,7 +27,7 @@ namespace Singulink.Numerics
     /// cref="BigDecimal"/> value that matches the output of <c>ToString()</c> on the floating point type as this is probably what is usually expected. The
     /// <see cref="FromDouble(double, bool)"/> method is provided which accepts a parameter indicating whether an exact conversion should be used if control
     /// over this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of 0.1d
-    /// converts to the <see cref="BigDecimal"/> value 0.1000000000000000055511151231257827021181583404541015625 instead of 0.1.</para>
+    /// converts to the <see cref="BigDecimal"/> value <c>0.1000000000000000055511151231257827021181583404541015625</c> instead of <c>0.1</c>.</para>
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
@@ -41,7 +41,7 @@ namespace Singulink.Numerics
         // and also happens to be a good limit for the base10 cache.
 
         // Num bytes needed to store a number with d digits = d * Log(10)/Log(2)/8 = d * 0.415
-        // 1024 entries * 500 avg entry digits = max 524k digits in memory * 0.415 = ~220kb max memory usage if cache grows to max size
+        // 1024 entries * 512 avg entry digits = max 524k digits in memory * 0.415 = ~220kb max memory usage if cache grows to max size
 
         private static readonly BigIntegerPowCache BigIntegerPow10 = BigIntegerPowCache.GetCache(10);
         private static readonly BigIntegerPowCache BigIntegerPow5 = BigIntegerPowCache.GetCache(5);
@@ -313,12 +313,14 @@ namespace Singulink.Numerics
         #region Conversion Methods
 
         /// <summary>
-        /// Gets an exact <see cref="BigDecimal"/> representation of a <see cref="float"/> including digits beyond the value's significant number of digits.
+        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="float"/> value. If <paramref name="exactConversion"/> is <see langword="true"/> then
+        /// digits beyond the value's significant number of digits are also included.
         /// </summary>
         public static BigDecimal FromSingle(float value, bool exactConversion) => FromFloat(value, exactConversion ? 0 : 7);
 
         /// <summary>
-        /// Gets an exact <see cref="BigDecimal"/> representation of a <see cref="double"/> including digits beyond the value's significant number of digits.
+        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="double"/> value. If <paramref name="exactConversion"/> is <see langword="true"/> then
+        /// digits beyond the value's significant number of digits are also included.
         /// </summary>
         public static BigDecimal FromDouble(double value, bool exactConversion) => FromFloat(value, exactConversion ? 0 : 15);
 
