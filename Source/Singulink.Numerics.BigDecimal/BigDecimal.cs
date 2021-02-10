@@ -223,24 +223,12 @@ namespace Singulink.Numerics
             return value._exponent < 0 ? value._mantissa / BigIntegerPow10.Get(-value._exponent) : value._mantissa * BigIntegerPow10.Get(value._exponent);
         }
 
-        /// <summary>
-        /// Converts a <see cref="BigDecimal"/> into an <see cref="int"/>.
-        /// </summary>
         public static explicit operator int(BigDecimal value) => (int)(BigInteger)value;
 
-        /// <summary>
-        /// Converts a <see cref="BigDecimal"/> into a <see cref="uint"/>.
-        /// </summary>
         public static explicit operator uint(BigDecimal value) => (uint)(BigInteger)value;
 
-        /// <summary>
-        /// Converts a <see cref="BigDecimal"/> into a <see cref="long"/>.
-        /// </summary>
         public static explicit operator long(BigDecimal value) => (long)(BigInteger)value;
 
-        /// <summary>
-        /// Converts a <see cref="BigDecimal"/> into a <see cref="ulong"/>.
-        /// </summary>
         public static explicit operator ulong(BigDecimal value) => (ulong)(BigInteger)value;
 
         #endregion
@@ -320,7 +308,7 @@ namespace Singulink.Numerics
 
         #endregion
 
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
         #region Conversion Methods
 
