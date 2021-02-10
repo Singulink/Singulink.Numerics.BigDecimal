@@ -43,5 +43,22 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual("1.23E-8", ((BigDecimal)0.0000000123m).ToString("G3"));
             Assert.AreEqual("-1E-8", ((BigDecimal)(-0.00000001m)).ToString("G1"));
         }
+
+        [TestMethod]
+        public void Currency()
+        {
+            Assert.AreEqual("¤12,000.00", ((BigDecimal)12000m).ToString("C"));
+            Assert.AreEqual("¤0.12", ((BigDecimal)0.123456m).ToString("C"));
+
+            Assert.AreEqual("¤12,000.0000", ((BigDecimal)12000m).ToString("C4"));
+
+            Assert.AreEqual("(¤12,000.00)", ((BigDecimal)(-12000m)).ToString("C"));
+            Assert.AreEqual("(¤0.12)", ((BigDecimal)(-0.123456m)).ToString("C"));
+
+            Assert.AreEqual("(¤12,000.0000)", ((BigDecimal)(-12000m)).ToString("C4"));
+
+            Assert.AreEqual("¤12,000", ((BigDecimal)12000m).ToString("C0"));
+            Assert.AreEqual("(¤12,000)", ((BigDecimal)(-12000m)).ToString("C0"));
+        }
     }
 }

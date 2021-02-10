@@ -1045,21 +1045,20 @@ namespace Singulink.Numerics
                 if (value._exponent >= 0)
                     return GetIntegerString(value, "G", formatProvider);
 
-                return GetDecimalString(value, "G", formatProvider);
+                return GetDecimalString(value, "G", null, formatProvider);
             }
 
             if (formatSpecifier == 'C') {
+                var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
                 BigDecimal value;
 
-                if (precisionSpecifier == null) {
-                    value = this;
-                }
-                else {
-                    int precision = precisionSpecifier.GetValueOrDefault();
-                    value = Round(this, precision, MidpointRounding.AwayFromZero);
-                }
+                int decimals = precisionSpecifier.HasValue ? precisionSpecifier.GetValueOrDefault() : formatInfo.CurrencyDecimalDigits;
+                value = Round(this, decimals, MidpointRounding.AwayFromZero);
 
-                return GetDecimalString(value, "C", formatProvider);
+                if (decimals == 0)
+                    return GetIntegerString(value, "C0", formatProvider);
+
+                return GetDecimalString(value, "C0", decimals, formatProvider);
             }
 
             throw new FormatException($"Unknown format specifier '{formatSpecifier}'");
@@ -1084,41 +1083,45 @@ namespace Singulink.Numerics
                 return $"{result[..(eIndex + 1)]}{(exponent > 0 ? "+" : string.Empty)}{exponent}";
             }
 
-            static string GetDecimalString(BigDecimal value, string wholePartFormat, IFormatProvider? formatProvider)
+            static string GetDecimalString(BigDecimal value, string wholePartFormat, int? fixedDecimalPlaces, IFormatProvider? formatProvider)
             {
                 var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
-
                 var wholePart = Truncate(value);
+                string wholeString;
+
+                if (wholePart.IsZero && value.Sign < 0)
+                    wholeString = (-1).ToString(wholePartFormat, formatProvider).Replace('1', '0');
+                else
+                    wholeString = GetIntegerString(wholePart, wholePartFormat, formatProvider);
 
                 var decimalPart = Abs(value - wholePart);
                 int decimalPartShift = -decimalPart._exponent;
-                int decimalPartLeadingZeros = decimalPartShift - decimalPart.Precision;
-                decimalPart = decimalPart._mantissa;
+                int decimalLeadingZeros = decimalPart.IsZero ? 0 : decimalPartShift - decimalPart.Precision;
+                int decimalTrailingZeros = 0;
 
+                if (fixedDecimalPlaces.HasValue)
+                    decimalTrailingZeros = Math.Max(0, fixedDecimalPlaces.GetValueOrDefault() - decimalPart.Precision - decimalLeadingZeros);
+
+                decimalPart = decimalPart._mantissa;
                 Debug.Assert(decimalPart._exponent == 0, "unexpected transformed decimal part exponent");
 
-                string wholePartString;
-
-                if (wholePart.IsZero && value.Sign < 0)
-                    wholePartString = (-1).ToString(wholePartFormat, formatProvider).Replace('1', '0');
-                else
-                    wholePartString = GetIntegerString(wholePart, wholePartFormat, formatProvider);
-
-                string decimalPartString = GetIntegerString(decimalPart, "G", formatProvider);
+                string decimalString = GetIntegerString(decimalPart, "G", formatProvider);
 
                 int insertPoint;
 
-                for (insertPoint = wholePartString.Length; insertPoint > 0; insertPoint--) {
-                    if (char.IsDigit(wholePartString[insertPoint - 1]))
+                for (insertPoint = wholeString.Length; insertPoint > 0; insertPoint--) {
+                    if (char.IsDigit(wholeString[insertPoint - 1]))
                         break;
                 }
 
-                var sb = new StringBuilder(wholePartString.Length + formatInfo.NumberDecimalSeparator.Length + decimalPartLeadingZeros + decimalPartString.Length);
-                sb.Append(wholePartString.AsSpan()[..insertPoint]);
-                sb.Append(formatInfo.NumberDecimalSeparator);
-                sb.Append('0', decimalPartLeadingZeros);
-                sb.Append(decimalPartString);
-                sb.Append(wholePartString.AsSpan()[insertPoint..]);
+                string decimalSeparator = wholePartFormat[0] == 'C' ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
+                var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length);
+                sb.Append(wholeString.AsSpan()[..insertPoint]);
+                sb.Append(decimalSeparator);
+                sb.Append('0', decimalLeadingZeros);
+                sb.Append(decimalString);
+                sb.Append('0', decimalTrailingZeros);
+                sb.Append(wholeString.AsSpan()[insertPoint..]);
 
                 return sb.ToString();
             }
