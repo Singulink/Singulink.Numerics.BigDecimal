@@ -397,7 +397,7 @@ namespace Singulink.Numerics
 
                 if (precision > 0) {
                     int digits = resultMantissa.CountDigits();
-                    int extraDigits = precision - digits;
+                    int extraDigits = digits - precision;
 
                     if (extraDigits > 0) {
                         resultMantissa = resultMantissa.Divide(BigIntegerPow10.Get(extraDigits));

@@ -21,5 +21,17 @@ namespace Singulink.Numerics.Tests
         {
             Assert.AreEqual("0.100000001490116119384765625", BigDecimal.FromSingle(0.1f, true).ToString());
         }
+
+        [TestMethod]
+        public void FromDoubleApproximate()
+        {
+            Assert.AreEqual("0.1", BigDecimal.FromDouble(0.1, false).ToString());
+        }
+
+        [TestMethod]
+        public void FromSingleApproximate()
+        {
+            Assert.AreEqual("0.1", BigDecimal.FromSingle(0.1f, false).ToString());
+        }
     }
 }
