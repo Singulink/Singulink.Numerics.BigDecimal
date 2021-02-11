@@ -22,6 +22,6 @@ The package is available on NuGet - simply install the `Singulink.Numerics.BigDe
 - Xamarin.iOS 12.16+
 - Xamarin.Android 10.0+
 
-## API
+## Further Reading
 
-You can view the documentation on the [project documentation site](https://www.singulink.com/Docs/Singulink.Numerics.BigDecimal/api/Singulink.Numerics.BigDecimal.html).
+You can view the fully documented API on the [project documentation site](https://www.singulink.com/Docs/Singulink.Numerics.BigDecimal/api/Singulink.Numerics.BigDecimal.html).
