@@ -26,8 +26,9 @@ namespace Singulink.Numerics
     /// Conversions from floating point types (<see cref="float"/> and <see cref="double"/>) are not "exact" when casting. This results in a <see
     /// cref="BigDecimal"/> value that matches the output of <c>ToString()</c> on the floating point type as this is probably what is usually expected. The
     /// <see cref="FromDouble(double, bool)"/> method is provided which accepts a parameter indicating whether an exact conversion should be used if control
-    /// over this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of 0.1d
-    /// converts to the <see cref="BigDecimal"/> value <c>0.1000000000000000055511151231257827021181583404541015625</c> instead of <c>0.1</c>.</para>
+    /// over this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of
+    /// <c>0.1d</c> converts to the <see cref="BigDecimal"/> value <c>0.1000000000000000055511151231257827021181583404541015625</c> instead of
+    /// <c>0.1</c>.</para>
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
@@ -105,17 +106,7 @@ namespace Singulink.Numerics
                 if (_precision.Value != 0)
                     return _precision.Value;
 
-                return GetAndCachePrecision(this);
-
-                [MethodImpl(MethodImplOptions.NoInlining)]
-                static int GetAndCachePrecision(BigDecimal @this)
-                {
-                    Debug.Assert(@this._precision != null && @this._precision.Value == 0, "precision is already cached");
-
-                    int precision = @this._mantissa.CountDigits();
-                    @this._precision.Value = precision;
-                    return precision;
-                }
+                return GetAndCachePrecision();
             }
         }
 
@@ -946,14 +937,34 @@ namespace Singulink.Numerics
         /// <remarks>
         /// <para>String format is composed of a format specifier followed by an optional precision specifier.</para>
         /// <para>Format specifiers:</para>
-        /// <list type="bullet">
-        ///   <item><term>G</term><description>General (default). Precision specifier determines the number of significant digits. If the precision specifier
-        ///   is omitted then the value is written out in full precision in standard decimal form. If a precision specifier is provided then the more compact
-        ///   of either decimal form or scientific notation is used.</description></item>
-        ///   <item><term>E</term><description>Exponential (scientific) notation. Precision specifier determines the number of decimal
-        ///   places.</description></item>
-        ///   <item><term>C</term><description>Currency. Precision specifier determines the number of decimal places.</description></item>
-        ///   <item><term>R</term><description>Round-trip. Writes out the mantissa followed by <c>E</c> and then the exponent.</description></item>
+        /// <list type="table">
+        ///   <listheader>
+        ///     <term>Specifier</term>
+        ///     <term>Name</term>
+        ///     <description>Description</description>
+        ///   </listheader>
+        ///   <item>
+        ///     <term>"G"</term>
+        ///     <term>General</term>
+        ///     <description>Default format specifier if none is provided. Precision specifier determines the number of significant digits. If the precision
+        ///     specifier is omitted then the value is written out in full precision in standard decimal form. If a precision specifier is provided then the
+        ///     more compact of either decimal form or scientific notation is used.</description>
+        ///   </item>
+        ///   <item>
+        ///     <term>"E"</term>
+        ///     <term>Exponential</term>
+        ///     <description>Exponential (scientific) notation. Precision specifier determines the number of decimal places.</description>
+        ///   </item>
+        ///   <item>
+        ///     <term>"C"</term>
+        ///     <term>Currency</term>
+        ///     <description>Precision specifier determines the number of decimal places.</description>
+        ///   </item>
+        ///   <item>
+        ///     <term>"R"</term>
+        ///     <term>Round-trip</term>
+        ///     <description>Writes out the mantissa followed by <c>E</c> and then the exponent.</description>
+        ///   </item>
         /// </list>
         /// </remarks>
         public string ToString(string? format, IFormatProvider? formatProvider = null)
@@ -1116,15 +1127,31 @@ namespace Singulink.Numerics
         /// </summary>
         public bool Equals(BigDecimal other) => other._mantissa.Equals(_mantissa) && other._exponent == _exponent;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Indicates whether this value and the specified object are equal.
+        /// </summary>
         public override bool Equals(object? obj) => obj is BigDecimal bigDecimal && Equals(bigDecimal);
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns the hash code for this value.
+        /// </summary>
         public override int GetHashCode() => HashCode.Combine(_mantissa, _exponent);
 
         #endregion
 
         #region Helper Methods
+
+        // Moved this to a non-local method for docfx. See: https://github.com/dotnet/docfx/issues/7055
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private int GetAndCachePrecision()
+        {
+            Debug.Assert(_precision != null && _precision.Value == 0, "precision is already cached");
+
+            int precision = _mantissa.CountDigits();
+            _precision.Value = precision;
+            return precision;
+        }
 
         /// <summary>
         /// Returns the mantissa of value, aligned to the reference exponent. Assumes the value exponent is larger than the reference exponent.

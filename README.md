@@ -24,4 +24,4 @@ The package is available on NuGet - simply install the `Singulink.Numerics.BigDe
 
 ## API
 
-You can view the API on [FuGet](https://www.fuget.org/packages/Singulink.Numerics.BigDecimal).
+You can view the documentation on the [project documentation site](https://www.singulink.com/Docs/Singulink.Numerics.BigDecimal/api/Singulink.Numerics.BigDecimal.html).
