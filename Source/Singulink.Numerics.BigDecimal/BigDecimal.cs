@@ -766,7 +766,7 @@ namespace Singulink.Numerics
                         currency = true;
                         s = s[..^formatInfo.CurrencySymbol.Length];
                     }
-                    else if (allowLeadingSign && EndsWithSign(s, out int parsedSign, out int signLength)) {
+                    else if (allowTrailingSign && EndsWithSign(s, out int parsedSign, out int signLength)) {
                         if (sign != 0)
                             return false;
 
