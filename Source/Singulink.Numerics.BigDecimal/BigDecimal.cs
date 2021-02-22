@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics
 {
@@ -36,7 +37,7 @@ namespace Singulink.Numerics
         #region Static Contants/Fields/Properties
 
         private const string ToDecimalOrFloatFormat = "R";
-        private const NumberStyles ToDecimalOrFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
+        private const NumberStyles ToDecimalOrFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
 
         // A max size of 1024 conveniently fits all the base2 double exponent ranges needed for the base5 cache to do fast double => BigDecimal conversions
         // and also happens to be a good limit for the base10 cache.
@@ -196,17 +197,17 @@ namespace Singulink.Numerics
 
         public static explicit operator float(BigDecimal value)
         {
-            return float.Parse(value.ToString(ToDecimalOrFloatFormat, CultureInfo.InvariantCulture), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
+            return float.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
         }
 
         public static explicit operator double(BigDecimal value)
         {
-            return double.Parse(value.ToString(ToDecimalOrFloatFormat, CultureInfo.InvariantCulture), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
+            return double.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
         }
 
         public static explicit operator decimal(BigDecimal value)
         {
-            return decimal.Parse(value.ToString(ToDecimalOrFloatFormat, CultureInfo.InvariantCulture), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
+            return decimal.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
         }
 
         public static explicit operator BigInteger(BigDecimal value)
@@ -963,7 +964,7 @@ namespace Singulink.Numerics
         ///   <item>
         ///     <term>"R"</term>
         ///     <term>Round-trip</term>
-        ///     <description>Writes out the mantissa followed by <c>E</c> and then the exponent.</description>
+        ///     <description>Writes out the mantissa followed by <c>E</c> and then the exponent, always using the <see cref="CultureInfo.InvariantCulture"/>.</description>
         ///   </item>
         /// </list>
         /// </remarks>
@@ -990,9 +991,9 @@ namespace Singulink.Numerics
 
             if (formatSpecifier == 'R') {
                 if (_exponent == 0)
-                    return _mantissa.ToString(formatProvider);
+                    return _mantissa.ToString(CultureInfo.InvariantCulture);
 
-                return ((FormattableString)$"{_mantissa}E{_exponent}").ToString(formatProvider);
+                return ((FormattableString)$"{_mantissa}E{_exponent}").ToString(CultureInfo.InvariantCulture);
             }
 
             if (formatSpecifier == 'E')
@@ -1047,12 +1048,23 @@ namespace Singulink.Numerics
 
             static string GetExponentialString(BigDecimal value, int? precisionSpecifier, IFormatProvider? formatProvider)
             {
+                var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
+
                 string result = value._mantissa.ToString("E" + precisionSpecifier, formatProvider);
+
+                if (value._exponent == 0)
+                    return result;
+
                 int eIndex = result.LastIndexOf("E", StringComparison.Ordinal);
 
-                int exponent = int.Parse(result[(eIndex + 1)..], formatProvider) + value._exponent;
+                int exponent = int.Parse(result.AsSpan()[(eIndex + 1)..], NumberStyles.AllowLeadingSign, formatProvider) + value._exponent;
+                var mantissa = result.AsSpan()[..(eIndex + 1)];
+                string absExponentString = Math.Abs(exponent).ToString(formatProvider);
 
-                return $"{result[..(eIndex + 1)]}{(exponent > 0 ? "+" : string.Empty)}{exponent}";
+                if (exponent > 0)
+                    return StringHelper.Concat(mantissa, formatInfo.PositiveSign, absExponentString);
+
+                return StringHelper.Concat(mantissa, formatInfo.NegativeSign, absExponentString);
             }
 
             static string GetDecimalString(BigDecimal value, string wholePartFormat, int? fixedDecimalPlaces, IFormatProvider? formatProvider)
