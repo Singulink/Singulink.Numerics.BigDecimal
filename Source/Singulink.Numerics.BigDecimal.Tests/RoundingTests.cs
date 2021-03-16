@@ -38,5 +38,18 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(1235m, BigDecimal.Round(1234.5m, 0, MidpointRounding.AwayFromZero));
             Assert.AreEqual(1235m, BigDecimal.Round(1234.5675m, 0, MidpointRounding.AwayFromZero));
         }
+
+        [TestMethod]
+        public void RoundingToNonExistantDigit()
+        {
+            // Ensures that rounding to a digit that doesn't exist in the mantissa works, i.e. 0.5 => 1
+
+            Assert.AreEqual(0m, BigDecimal.Round(0.5m, 0));
+            Assert.AreEqual(1m, BigDecimal.Round(0.5m, 0, MidpointRounding.AwayFromZero));
+            Assert.AreEqual(1m, BigDecimal.Round(0.6m, 0));
+            Assert.AreEqual(0m, BigDecimal.Round(0.4m, 0));
+            Assert.AreEqual(0m, BigDecimal.Round(0.05m, 0));
+            Assert.AreEqual(0m, BigDecimal.Round(0.00005m, 0));
+        }
     }
 }
