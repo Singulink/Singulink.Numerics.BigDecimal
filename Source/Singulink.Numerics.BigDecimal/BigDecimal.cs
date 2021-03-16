@@ -592,14 +592,12 @@ namespace Singulink.Numerics
             if (decimals < 0)
                 throw new ArgumentOutOfRangeException(nameof(decimals));
 
-            int removeDecimals = -value._exponent - decimals;
+            int extraDigits = -value._exponent - decimals;
 
-            if (removeDecimals <= 0)
+            if (extraDigits <= 0)
                 return value;
 
-            int precision = value.Precision - removeDecimals;
-
-            return RoundToPrecision(value, precision, mode);
+            return new BigDecimal(value._mantissa.Divide(BigIntegerPow10.Get(extraDigits), mode), value._exponent + extraDigits);
         }
 
         /// <summary>
@@ -670,6 +668,10 @@ namespace Singulink.Numerics
             bool allowLeadingSign = style.HasFlag(NumberStyles.AllowLeadingSign);
             bool allowTrailingWhite = style.HasFlag(NumberStyles.AllowTrailingWhite);
             bool allowTrailingSign = style.HasFlag(NumberStyles.AllowTrailingSign);
+            bool allowParenthesis = style.HasFlag(NumberStyles.AllowParentheses);
+            bool allowExponent = style.HasFlag(NumberStyles.AllowExponent);
+            bool allowDecimalPoint = style.HasFlag(NumberStyles.AllowDecimalPoint);
+            bool allowThousands = style.HasFlag(NumberStyles.AllowThousands);
 
             bool currency = false;
             int sign = 0;
@@ -700,7 +702,7 @@ namespace Singulink.Numerics
 
             bool TryParseParenthesis(ref ReadOnlySpan<char> s)
             {
-                if (style.HasFlag(NumberStyles.AllowParentheses) && s.Length >= 3 && s[0] == '(') {
+                if (allowParenthesis && s.Length >= 3 && s[0] == '(') {
                     if (s[^1] != ')')
                         return false;
 
@@ -804,7 +806,7 @@ namespace Singulink.Numerics
 
             bool TryParseExponent(ref ReadOnlySpan<char> s, out int result)
             {
-                if (style.HasFlag(NumberStyles.AllowExponent)) {
+                if (allowExponent) {
                     int index = s.LastIndexOfAny('E', 'e');
 
                     if (index >= 0) {
@@ -820,7 +822,7 @@ namespace Singulink.Numerics
 
             bool TryParseFractional(ref ReadOnlySpan<char> s, out BigDecimal? result)
             {
-                if (!style.HasFlag(NumberStyles.AllowDecimalPoint) || !SplitFractional(ref s, out var f)) {
+                if (!allowDecimalPoint || !SplitFractional(ref s, out var f)) {
                     result = null;
                     return true;
                 }
@@ -878,7 +880,7 @@ namespace Singulink.Numerics
                 s = s.TrimEnd('0');
                 int exponent = numDigits - s.Length;
 
-                (var wholeStyle, var wholeFormatInfo) = GetInfo();
+                var (wholeStyle, wholeFormatInfo) = GetWholeStyleAndInfo();
 
                 if (!BigInteger.TryParse(s, wholeStyle, wholeFormatInfo, out var mantissa)) {
                     result = null;
@@ -888,9 +890,9 @@ namespace Singulink.Numerics
                 result = new BigDecimal(mantissa, exponent, SharedPrecisionHolder.Get(s.Length));
                 return true;
 
-                (NumberStyles Style, NumberFormatInfo FormatInfo) GetInfo()
+                (NumberStyles Style, NumberFormatInfo FormatInfo) GetWholeStyleAndInfo()
                 {
-                    if (style.HasFlag(NumberStyles.AllowThousands)) {
+                    if (allowThousands) {
                         if (currency && formatInfo.CurrencyGroupSeparator != formatInfo.NumberGroupSeparator) {
                             var copy = (NumberFormatInfo)formatInfo.Clone();
                             copy.NumberGroupSeparator = formatInfo.CurrencyGroupSeparator;
@@ -959,7 +961,12 @@ namespace Singulink.Numerics
         ///   <item>
         ///     <term>"C"</term>
         ///     <term>Currency</term>
-        ///     <description>Precision specifier determines the number of decimal places.</description>
+        ///     <description>Precision specifier determines the number of decimal places. Default value is <see cref="NumberFormatInfo.CurrencyDecimalDigits"/>.</description>
+        ///   </item>
+        ///   <item>
+        ///     <term>"P"</term>
+        ///     <term>Percentage</term>
+        ///     <description>Precision specifier determines the number of decimal places. Default value is <see cref="NumberFormatInfo.PercentDecimalDigits"/>.</description>
         ///   </item>
         ///   <item>
         ///     <term>"R"</term>
@@ -971,6 +978,7 @@ namespace Singulink.Numerics
         public string ToString(string? format, IFormatProvider? formatProvider = null)
         {
             format = format?.Trim();
+            var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
 
             char formatSpecifier;
             int? precisionSpecifier = null;
@@ -997,12 +1005,12 @@ namespace Singulink.Numerics
             }
 
             if (formatSpecifier == 'E')
-                return GetExponentialString(this, precisionSpecifier, formatProvider);
+                return GetExponentialString(this, precisionSpecifier);
 
             if (formatSpecifier == 'G') {
                 BigDecimal value;
 
-                if (precisionSpecifier == null || precisionSpecifier.Value == 0) {
+                if (precisionSpecifier == null || precisionSpecifier.GetValueOrDefault() == 0) {
                     value = this;
                 }
                 else {
@@ -1011,30 +1019,45 @@ namespace Singulink.Numerics
 
                     if (GetEstimatedFullDecimalLength(value) > GetEstimatedExponentialLength(value)) {
                         int exponentDecimals = Math.Min(value.Precision, precision) - 1;
-                        return GetExponentialString(value, exponentDecimals, formatProvider);
+                        return GetExponentialString(value, exponentDecimals);
                     }
                 }
 
                 if (value._exponent >= 0)
-                    return GetIntegerString(value, "G", formatProvider);
+                    return GetIntegerString(value, "G");
 
-                return GetDecimalString(value, "G", null, formatProvider);
+                return GetDecimalString(value, "G", null);
             }
 
-            if (formatSpecifier == 'C') {
-                var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
-                BigDecimal value;
+            if (formatSpecifier == 'C' || formatSpecifier == 'P') {
+                BigDecimal value = this;
+
+                if (formatSpecifier == 'P') {
+                    // Convert percentage format info params to currency params and write it out as a currency value:
+
+                    formatInfo = new NumberFormatInfo() {
+                        CurrencySymbol = formatInfo.PercentSymbol,
+                        CurrencyDecimalDigits = formatInfo.PercentDecimalDigits,
+                        CurrencyDecimalSeparator = formatInfo.PercentDecimalSeparator,
+                        CurrencyGroupSeparator = formatInfo.PercentGroupSeparator,
+                        CurrencyGroupSizes = formatInfo.PercentGroupSizes,
+                        CurrencyPositivePattern = PositivePercentagePatternToCurrencyPattern(formatInfo.PercentPositivePattern),
+                        CurrencyNegativePattern = NegativePercentagePatternToCurrencyPattern(formatInfo.PercentNegativePattern),
+                    };
+
+                    value *= 100;
+                }
 
                 int decimals = precisionSpecifier.HasValue ? precisionSpecifier.GetValueOrDefault() : formatInfo.CurrencyDecimalDigits;
-                value = Round(this, decimals, MidpointRounding.AwayFromZero);
+                value = Round(value, decimals, MidpointRounding.AwayFromZero);
 
                 if (decimals == 0)
-                    return GetIntegerString(value, "C0", formatProvider);
+                    return GetIntegerString(value, "C0");
 
-                return GetDecimalString(value, "C0", decimals, formatProvider);
+                return GetDecimalString(value, "C0", decimals);
             }
 
-            throw new FormatException($"Unknown format specifier '{formatSpecifier}'");
+            throw new FormatException($"Format specifier was invalid: '{formatSpecifier}'.");
 
             static int GetEstimatedFullDecimalLength(BigDecimal value)
             {
@@ -1046,20 +1069,18 @@ namespace Singulink.Numerics
 
             static int GetEstimatedExponentialLength(BigDecimal value) => value.Precision + 5; // .E+99
 
-            static string GetExponentialString(BigDecimal value, int? precisionSpecifier, IFormatProvider? formatProvider)
+            string GetExponentialString(BigDecimal value, int? precisionSpecifier)
             {
-                var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
-
-                string result = value._mantissa.ToString("E" + precisionSpecifier, formatProvider);
+                string result = value._mantissa.ToString("E" + precisionSpecifier, formatInfo);
 
                 if (value._exponent == 0)
                     return result;
 
                 int eIndex = result.LastIndexOf("E", StringComparison.Ordinal);
 
-                int exponent = int.Parse(result.AsSpan()[(eIndex + 1)..], NumberStyles.AllowLeadingSign, formatProvider) + value._exponent;
+                int exponent = int.Parse(result.AsSpan()[(eIndex + 1)..], NumberStyles.AllowLeadingSign, formatInfo) + value._exponent;
                 var mantissa = result.AsSpan()[..(eIndex + 1)];
-                string absExponentString = Math.Abs(exponent).ToString(formatProvider);
+                string absExponentString = Math.Abs(exponent).ToString(formatInfo);
 
                 if (exponent > 0)
                     return StringHelper.Concat(mantissa, formatInfo.PositiveSign, absExponentString);
@@ -1067,16 +1088,15 @@ namespace Singulink.Numerics
                 return StringHelper.Concat(mantissa, formatInfo.NegativeSign, absExponentString);
             }
 
-            static string GetDecimalString(BigDecimal value, string wholePartFormat, int? fixedDecimalPlaces, IFormatProvider? formatProvider)
+            string GetDecimalString(BigDecimal value, string wholePartFormat, int? fixedDecimalPlaces)
             {
-                var formatInfo = NumberFormatInfo.GetInstance(formatProvider);
                 var wholePart = Truncate(value);
                 string wholeString;
 
                 if (wholePart.IsZero && value.Sign < 0)
-                    wholeString = (-1).ToString(wholePartFormat, formatProvider).Replace('1', '0');
+                    wholeString = (-1).ToString(wholePartFormat, formatInfo).Replace('1', '0');
                 else
-                    wholeString = GetIntegerString(wholePart, wholePartFormat, formatProvider);
+                    wholeString = GetIntegerString(wholePart, wholePartFormat);
 
                 var decimalPart = Abs(value - wholePart);
                 int decimalPartShift = -decimalPart._exponent;
@@ -1089,7 +1109,7 @@ namespace Singulink.Numerics
                 decimalPart = decimalPart._mantissa;
                 Debug.Assert(decimalPart._exponent == 0, "unexpected transformed decimal part exponent");
 
-                string decimalString = GetIntegerString(decimalPart, "G", formatProvider);
+                string decimalString = GetIntegerString(decimalPart, "G");
 
                 int insertPoint;
 
@@ -1099,6 +1119,7 @@ namespace Singulink.Numerics
                 }
 
                 string decimalSeparator = wholePartFormat[0] == 'C' ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
+
                 var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length);
                 sb.Append(wholeString.AsSpan()[..insertPoint]);
                 sb.Append(decimalSeparator);
@@ -1110,7 +1131,7 @@ namespace Singulink.Numerics
                 return sb.ToString();
             }
 
-            static string GetIntegerString(BigDecimal value, string format, IFormatProvider? formatProvider)
+            string GetIntegerString(BigDecimal value, string format)
             {
                 Debug.Assert(value._exponent >= 0, "value contains decimal digits");
                 BigInteger intValue = value._mantissa;
@@ -1118,8 +1139,32 @@ namespace Singulink.Numerics
                 if (value._exponent > 0)
                     intValue *= BigIntegerPow10.Get(value._exponent);
 
-                return intValue.ToString(format, formatProvider);
+                return intValue.ToString(format, formatInfo);
             }
+
+            static int PositivePercentagePatternToCurrencyPattern(int positivePercentagePattern) => positivePercentagePattern switch {
+                0 => 3,
+                1 => 1,
+                2 => 0,
+                3 => 2,
+                _ => throw new NotSupportedException("Unsupported positive percentage pattern."),
+            };
+
+            static int NegativePercentagePatternToCurrencyPattern(int negativePercentagePattern) => negativePercentagePattern switch {
+                0 => 8,
+                1 => 5,
+                2 => 1,
+                3 => 2,
+                4 => 3,
+                5 => 6,
+                6 => 7,
+                7 => 9,
+                8 => 10,
+                9 => 11,
+                10 => 12,
+                11 => 13,
+                _ => throw new NotSupportedException("Unsupported negative percentage pattern."),
+            };
         }
 
         #endregion

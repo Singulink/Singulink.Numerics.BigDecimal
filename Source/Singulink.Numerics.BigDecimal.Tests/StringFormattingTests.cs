@@ -60,5 +60,25 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual("¤12,000", ((BigDecimal)12000m).ToString("C0"));
             Assert.AreEqual("(¤12,000)", ((BigDecimal)(-12000m)).ToString("C0"));
         }
+
+        [TestMethod]
+        public void Percent()
+        {
+            Assert.AreEqual("50.00 %", ((BigDecimal)0.50m).ToString("P"));
+            Assert.AreEqual("-50 %", ((BigDecimal)(-0.50m)).ToString("P0"));
+
+            Assert.AreEqual("12,000.00 %", ((BigDecimal)120m).ToString("P"));
+            Assert.AreEqual("0.12 %", ((BigDecimal)0.00123456m).ToString("P"));
+
+            Assert.AreEqual("12,000.0000 %", ((BigDecimal)120m).ToString("P4"));
+
+            Assert.AreEqual("-12,000.00 %", ((BigDecimal)(-120m)).ToString("P"));
+            Assert.AreEqual("-0.12 %", ((BigDecimal)(-0.00123456m)).ToString("P"));
+
+            Assert.AreEqual("-12,000.0000 %", ((BigDecimal)(-120m)).ToString("P4"));
+
+            Assert.AreEqual("12,000 %", ((BigDecimal)120m).ToString("P0"));
+            Assert.AreEqual("-12,000 %", ((BigDecimal)(-120m)).ToString("P0"));
+        }
     }
 }
