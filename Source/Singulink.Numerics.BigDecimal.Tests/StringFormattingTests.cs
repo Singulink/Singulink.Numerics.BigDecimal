@@ -80,5 +80,31 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual("12,000 %", ((BigDecimal)120m).ToString("P0"));
             Assert.AreEqual("-12,000 %", ((BigDecimal)(-120m)).ToString("P0"));
         }
+
+        [TestMethod]
+        public void FixedPoint()
+        {
+            Assert.AreEqual("1.00", ((BigDecimal)1m).ToString("F"));
+            Assert.AreEqual("1.0000", ((BigDecimal)1m).ToString("F4"));
+
+            Assert.AreEqual("0.1", ((BigDecimal)0.05m).ToString("F1"));
+            Assert.AreEqual("0.05", ((BigDecimal)0.05m).ToString("F2"));
+
+            Assert.AreEqual("-1000", ((BigDecimal)(-1000.05m)).ToString("F0"));
+            Assert.AreEqual("-1000.0500", ((BigDecimal)(-1000.05m)).ToString("F4"));
+        }
+
+        [TestMethod]
+        public void Number()
+        {
+            Assert.AreEqual("1.00", ((BigDecimal)1m).ToString("N"));
+            Assert.AreEqual("1.0000", ((BigDecimal)1m).ToString("N4"));
+
+            Assert.AreEqual("0.1", ((BigDecimal)0.05m).ToString("N1"));
+            Assert.AreEqual("0.05", ((BigDecimal)0.05m).ToString("N2"));
+
+            Assert.AreEqual("-1,000", ((BigDecimal)(-1000.05m)).ToString("N0"));
+            Assert.AreEqual("-1,000.0500", ((BigDecimal)(-1000.05m)).ToString("N4"));
+        }
     }
 }

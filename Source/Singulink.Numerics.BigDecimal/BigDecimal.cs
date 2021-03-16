@@ -954,24 +954,34 @@ namespace Singulink.Numerics
         ///     more compact of either decimal form or scientific notation is used.</description>
         ///   </item>
         ///   <item>
+        ///     <term>"F"</term>
+        ///     <term>Fixed-point</term>
+        ///     <description>Precision specifier determines the number of decimal digits. Default value is <see cref="NumberFormatInfo.NumberDecimalDigits"/>.</description>
+        ///   </item>
+        ///   <item>
+        ///     <term>"N"</term>
+        ///     <term>Number</term>
+        ///     <description>Like fixed-point, but also outputs group separators. Precision specifier determines the number of decimal digits. Default value is <see cref="NumberFormatInfo.NumberDecimalDigits"/>.</description>
+        ///   </item>
+        ///   <item>
         ///     <term>"E"</term>
         ///     <term>Exponential</term>
-        ///     <description>Exponential (scientific) notation. Precision specifier determines the number of decimal places.</description>
+        ///     <description>Exponential (scientific) notation. Precision specifier determines the number of decimal digits.</description>
         ///   </item>
         ///   <item>
         ///     <term>"C"</term>
         ///     <term>Currency</term>
-        ///     <description>Precision specifier determines the number of decimal places. Default value is <see cref="NumberFormatInfo.CurrencyDecimalDigits"/>.</description>
+        ///     <description>Precision specifier determines the number of decimal digits. Default value is <see cref="NumberFormatInfo.CurrencyDecimalDigits"/>.</description>
         ///   </item>
         ///   <item>
         ///     <term>"P"</term>
         ///     <term>Percentage</term>
-        ///     <description>Precision specifier determines the number of decimal places. Default value is <see cref="NumberFormatInfo.PercentDecimalDigits"/>.</description>
+        ///     <description>Precision specifier determines the number of decimal digits. Default value is <see cref="NumberFormatInfo.PercentDecimalDigits"/>.</description>
         ///   </item>
         ///   <item>
         ///     <term>"R"</term>
         ///     <term>Round-trip</term>
-        ///     <description>Writes out the mantissa followed by <c>E</c> and then the exponent, always using the <see cref="CultureInfo.InvariantCulture"/>.</description>
+        ///     <description>Outputs the mantissa followed by <c>E</c> and then the exponent, always using the <see cref="CultureInfo.InvariantCulture"/>.</description>
         ///   </item>
         /// </list>
         /// </remarks>
@@ -997,16 +1007,6 @@ namespace Singulink.Numerics
                 }
             }
 
-            if (formatSpecifier == 'R') {
-                if (_exponent == 0)
-                    return _mantissa.ToString(CultureInfo.InvariantCulture);
-
-                return ((FormattableString)$"{_mantissa}E{_exponent}").ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (formatSpecifier == 'E')
-                return GetExponentialString(this, precisionSpecifier);
-
             if (formatSpecifier == 'G') {
                 BigDecimal value;
 
@@ -1028,6 +1028,21 @@ namespace Singulink.Numerics
 
                 return GetDecimalString(value, "G", null);
             }
+
+            if (formatSpecifier == 'F' || formatSpecifier == 'N') {
+                string wholePartFormat = formatSpecifier == 'F' ? "F0" : "N0";
+
+                int decimals = precisionSpecifier.HasValue ? precisionSpecifier.GetValueOrDefault() : formatInfo.NumberDecimalDigits;
+                var value = Round(this, decimals, MidpointRounding.AwayFromZero);
+
+                if (decimals == 0)
+                    return GetIntegerString(value, wholePartFormat);
+
+                return GetDecimalString(value, wholePartFormat, decimals);
+            }
+
+            if (formatSpecifier == 'E')
+                return GetExponentialString(this, precisionSpecifier);
 
             if (formatSpecifier == 'C' || formatSpecifier == 'P') {
                 BigDecimal value = this;
@@ -1055,6 +1070,13 @@ namespace Singulink.Numerics
                     return GetIntegerString(value, "C0");
 
                 return GetDecimalString(value, "C0", decimals);
+            }
+
+            if (formatSpecifier == 'R') {
+                if (_exponent == 0)
+                    return _mantissa.ToString(CultureInfo.InvariantCulture);
+
+                return ((FormattableString)$"{_mantissa}E{_exponent}").ToString(CultureInfo.InvariantCulture);
             }
 
             throw new FormatException($"Format specifier was invalid: '{formatSpecifier}'.");
