@@ -32,6 +32,9 @@ namespace Singulink.Numerics.Tests
         {
             Assert.AreEqual(0.33333m, BigDecimal.Divide(1, 3, 5));
             Assert.AreEqual(0.66667m, BigDecimal.Divide(2, 3, 5));
+
+            Assert.AreEqual(0.33334m, BigDecimal.Divide(1, 3, 5, MidpointRounding.ToPositiveInfinity));
+            Assert.AreEqual(0.66666m, BigDecimal.Divide(2, 3, 5, MidpointRounding.ToZero));
         }
 
         [TestMethod]
