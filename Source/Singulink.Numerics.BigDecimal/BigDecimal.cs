@@ -97,7 +97,7 @@ namespace Singulink.Numerics
         public int Sign => _mantissa.Sign;
 
         /// <summary>
-        /// Gets the precision of this value, i.e. the total number of digits it contains.
+        /// Gets the precision of this value, i.e. the total number of digits it contains (excluding any leading/trailing zeros). Zero values have a precision of 1.
         /// </summary>
         public int Precision {
             get {
@@ -402,32 +402,6 @@ namespace Singulink.Numerics
         public static BigDecimal Abs(BigDecimal value) => value._mantissa.Sign >= 0 ? value : -value;
 
         /// <summary>
-        /// Rounds down to the nearest integral value.
-        /// </summary>
-        public static BigDecimal Floor(BigDecimal value)
-        {
-            var result = Truncate(value);
-
-            if (value._mantissa.Sign < 0 && value != result)
-                result -= 1;
-
-            return result;
-        }
-
-        /// <summary>
-        /// Rounds up to the nearest integral value.
-        /// </summary>
-        public static BigDecimal Ceiling(BigDecimal value)
-        {
-            var result = Truncate(value);
-
-            if (value._mantissa.Sign > 0 && value != result)
-                result += 1;
-
-            return result;
-        }
-
-        /// <summary>
         /// Performs a division operation using the specified maximum extended precision.
         /// </summary>
         /// <param name="dividend">The dividend of the division operation.</param>
@@ -521,13 +495,12 @@ namespace Singulink.Numerics
         /// <summary>
         /// Returns the specified basis raised to the specified exponent. Exponent must be greater than or equal to 0.
         /// </summary>
-        public static BigDecimal Pow(BigDecimal basis, int exponent)
-        {
-            if (exponent < 0)
-                throw new ArgumentOutOfRangeException(nameof(exponent));
-
-            return new BigDecimal(BigInteger.Pow(basis._mantissa, exponent), basis._exponent * exponent);
-        }
+        public static BigDecimal Pow(BigDecimal basis, int exponent) => exponent switch {
+            < 0 => throw new ArgumentOutOfRangeException(nameof(exponent)),
+            0 => One,
+            1 => basis,
+            _ => new BigDecimal(BigInteger.Pow(basis._mantissa, exponent), basis._exponent * exponent),
+        };
 
         /// <summary>
         /// Returns ten (10) raised to the specified exponent.
@@ -536,7 +509,7 @@ namespace Singulink.Numerics
 
         #endregion
 
-        #region Truncate Functions
+        #region Rounding Functions
 
         /// <summary>
         /// Discards any fractional digits, effectively rounding towards zero.
@@ -565,9 +538,31 @@ namespace Singulink.Numerics
             return new BigDecimal(value._mantissa / BigIntegerPow10.Get(extraDigits), value._exponent + extraDigits);
         }
 
-        #endregion
+        /// <summary>
+        /// Rounds down to the nearest integral value.
+        /// </summary>
+        public static BigDecimal Floor(BigDecimal value)
+        {
+            var result = Truncate(value);
 
-        #region Round Functions
+            if (value._mantissa.Sign < 0 && value != result)
+                result -= 1;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Rounds up to the nearest integral value.
+        /// </summary>
+        public static BigDecimal Ceiling(BigDecimal value)
+        {
+            var result = Truncate(value);
+
+            if (value._mantissa.Sign > 0 && value != result)
+                result += 1;
+
+            return result;
+        }
 
         /// <summary>
         /// Rounds the value to the nearest integer using the <see cref="MidpointRounding.ToEven"/> midpoint rounding mode.
@@ -577,6 +572,9 @@ namespace Singulink.Numerics
         /// <summary>
         /// Rounds the value to the specified number of decimal places using the <see cref="MidpointRounding.ToEven"/> midpoint rounding mode.
         /// </summary>
+        /// <remarks>
+        /// <para>A negative number of decimal places indicates rounding to a whole number, i.e. <c>-1</c> for the nearest 10, <c>-2</c> for the nearest 100, etc.</para>
+        /// </remarks>
         public static BigDecimal Round(BigDecimal value, int decimals) => Round(value, decimals, MidpointRounding.ToEven);
 
         /// <summary>
@@ -587,11 +585,11 @@ namespace Singulink.Numerics
         /// <summary>
         /// Rounds the value to the specified number of decimal places using the given midpoint rounding mode.
         /// </summary>
+        /// <remarks>
+        /// <para>A negative number of decimal places indicates rounding to a whole number digit, i.e. <c>-1</c> for the nearest 10, <c>-2</c> for the nearest 100, etc.</para>
+        /// </remarks>
         public static BigDecimal Round(BigDecimal value, int decimals, MidpointRounding mode)
         {
-            if (decimals < 0)
-                throw new ArgumentOutOfRangeException(nameof(decimals));
-
             int extraDigits = -value._exponent - decimals;
 
             if (extraDigits <= 0)
