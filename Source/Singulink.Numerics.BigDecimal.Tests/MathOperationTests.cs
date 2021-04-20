@@ -19,12 +19,25 @@ namespace Singulink.Numerics.Tests
         }
 
         [TestMethod]
-        public void NonExtendedDivision()
+        public void ExactDivision()
         {
-            Assert.AreEqual(1m, BigDecimal.One / BigDecimal.One);
-            Assert.AreEqual(0.1m, BigDecimal.One / 10);
-            Assert.AreEqual(0.01m, BigDecimal.One / 100);
-            Assert.AreEqual(0.001m, BigDecimal.One / 1000);
+            Assert.AreEqual(1m, BigDecimal.DivideExact(1, 1));
+            Assert.AreEqual(0.1m, BigDecimal.DivideExact(1, 10));
+            Assert.AreEqual(0.01m, BigDecimal.DivideExact(1, 100));
+            Assert.AreEqual(0.001m, BigDecimal.DivideExact(1, 1000));
+
+            Assert.AreEqual(-0.001m, BigDecimal.DivideExact(1, -1000));
+            Assert.AreEqual(-0.001m, BigDecimal.DivideExact(-1, 1000));
+
+            Assert.AreEqual(-0.001m, BigDecimal.DivideExact(1, -1000));
+            Assert.AreEqual(-0.001m, BigDecimal.DivideExact(-1, 1000));
+        }
+
+        [TestMethod]
+        public void FailedExactDivision()
+        {
+            Assert.AreEqual(false, BigDecimal.TryDivideExact(2, 3, out _));
+            Assert.AreEqual(false, BigDecimal.TryDivideExact(-1000000000000, 3, out _));
         }
 
         [TestMethod]
