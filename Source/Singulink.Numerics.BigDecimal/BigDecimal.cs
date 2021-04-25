@@ -714,8 +714,8 @@ namespace Singulink.Numerics
 
             bool TryParseStart(ref ReadOnlySpan<char> s)
             {
-                while (s.Length > 0 && !char.IsDigit(s[0]) && !s.StartsWith(formatInfo.NumberDecimalSeparator, cmp)) {
-                    if (allowCurrencySymbol && s.StartsWith(formatInfo.CurrencySymbol, cmp)) {
+                while (s.Length > 0 && !char.IsDigit(s[0]) && !s.StartsWith(formatInfo.NumberDecimalSeparator.AsSpan(), cmp)) {
+                    if (allowCurrencySymbol && s.StartsWith(formatInfo.CurrencySymbol.AsSpan(), cmp)) {
                         if (currency)
                             return false;
 
@@ -740,12 +740,12 @@ namespace Singulink.Numerics
 
                 bool StartsWithSign(ReadOnlySpan<char> s, out int sign, out int signLength)
                 {
-                    if (s.StartsWith(formatInfo.PositiveSign, cmp)) {
+                    if (s.StartsWith(formatInfo.PositiveSign.AsSpan(), cmp)) {
                         sign = 1;
                         signLength = formatInfo.PositiveSign.Length;
                         return true;
                     }
-                    else if (s.StartsWith(formatInfo.NegativeSign, cmp)) {
+                    else if (s.StartsWith(formatInfo.NegativeSign.AsSpan(), cmp)) {
                         sign = -1;
                         signLength = formatInfo.NegativeSign.Length;
                         return true;
@@ -759,8 +759,8 @@ namespace Singulink.Numerics
 
             bool TryParseEnd(ref ReadOnlySpan<char> s)
             {
-                while (s.Length > 0 && !char.IsDigit(s[^1]) && !s.EndsWith(formatInfo.NumberDecimalSeparator, cmp)) {
-                    if (allowCurrencySymbol && s.EndsWith(formatInfo.CurrencySymbol, cmp)) {
+                while (s.Length > 0 && !char.IsDigit(s[^1]) && !s.EndsWith(formatInfo.NumberDecimalSeparator.AsSpan(), cmp)) {
+                    if (allowCurrencySymbol && s.EndsWith(formatInfo.CurrencySymbol.AsSpan(), cmp)) {
                         if (currency)
                             return false;
 
@@ -785,12 +785,12 @@ namespace Singulink.Numerics
 
                 bool EndsWithSign(ReadOnlySpan<char> s, out int sign, out int signLength)
                 {
-                    if (s.EndsWith(formatInfo.PositiveSign, cmp)) {
+                    if (s.EndsWith(formatInfo.PositiveSign.AsSpan(), cmp)) {
                         sign = 1;
                         signLength = formatInfo.PositiveSign.Length;
                         return true;
                     }
-                    else if (s.EndsWith(formatInfo.NegativeSign, cmp)) {
+                    else if (s.EndsWith(formatInfo.NegativeSign.AsSpan(), cmp)) {
                         sign = -1;
                         signLength = formatInfo.NegativeSign.Length;
                         return true;
@@ -810,7 +810,11 @@ namespace Singulink.Numerics
                     if (index >= 0) {
                         var e = s[(index + 1)..];
                         s = s[..index];
+#if NETSTANDARD2_0
+                        return int.TryParse(e.ToString(), NumberStyles.AllowLeadingSign, formatProvider, out result);
+#else
                         return int.TryParse(e, NumberStyles.AllowLeadingSign, formatProvider, out result);
+#endif
                     }
                 }
 
@@ -835,7 +839,11 @@ namespace Singulink.Numerics
                 int exponent = -f.Length;
                 f = f.TrimStart('0');
 
+#if NETSTANDARD2_0
+                if (!BigInteger.TryParse(f.ToString(), NumberStyles.None, formatProvider, out var mantissa)) {
+#else
                 if (!BigInteger.TryParse(f, NumberStyles.None, formatProvider, out var mantissa)) {
+#endif
                     result = null;
                     return false;
                 }
@@ -846,7 +854,7 @@ namespace Singulink.Numerics
                 bool SplitFractional(ref ReadOnlySpan<char> s, out ReadOnlySpan<char> f)
                 {
                     string decimalSeparator = currency ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
-                    int decimalIndex = s.IndexOf(decimalSeparator, cmp);
+                    int decimalIndex = s.IndexOf(decimalSeparator.AsSpan(), cmp);
 
                     if (decimalIndex >= 0) {
                         f = s[(decimalIndex + decimalSeparator.Length)..];
@@ -880,7 +888,11 @@ namespace Singulink.Numerics
 
                 var (wholeStyle, wholeFormatInfo) = GetWholeStyleAndInfo();
 
+#if NETSTANDARD2_0
+                if (!BigInteger.TryParse(s.ToString(), wholeStyle, wholeFormatInfo, out var mantissa)) {
+#else
                 if (!BigInteger.TryParse(s, wholeStyle, wholeFormatInfo, out var mantissa)) {
+#endif
                     result = null;
                     return false;
                 }
@@ -998,7 +1010,11 @@ namespace Singulink.Numerics
                 formatSpecifier = char.ToUpperInvariant(format[0]);
 
                 if (format.Length > 1) {
+#if NETSTANDARD2_0
+                    if (int.TryParse(format[1..], NumberStyles.None, CultureInfo.InvariantCulture, out int ps))
+#else
                     if (int.TryParse(format.AsSpan()[1..], NumberStyles.None, CultureInfo.InvariantCulture, out int ps))
+#endif
                         precisionSpecifier = ps;
                     else
                         throw new FormatException($"Invalid precision specifier: '{format[1..]}'");
@@ -1098,14 +1114,19 @@ namespace Singulink.Numerics
 
                 int eIndex = result.LastIndexOf("E", StringComparison.Ordinal);
 
-                int exponent = int.Parse(result.AsSpan()[(eIndex + 1)..], NumberStyles.AllowLeadingSign, formatInfo) + value._exponent;
+#if NETSTANDARD2_0
+                string exponentString = result[(eIndex + 1)..];
+#else
+                var exponentString = result.AsSpan()[(eIndex + 1)..];
+#endif
+                int exponent = int.Parse(exponentString, NumberStyles.AllowLeadingSign, formatInfo) + value._exponent;
                 var mantissa = result.AsSpan()[..(eIndex + 1)];
                 string absExponentString = Math.Abs(exponent).ToString(formatInfo);
 
                 if (exponent > 0)
-                    return StringHelper.Concat(mantissa, formatInfo.PositiveSign, absExponentString);
+                    return StringHelper.Concat(mantissa, formatInfo.PositiveSign.AsSpan(), absExponentString.AsSpan());
 
-                return StringHelper.Concat(mantissa, formatInfo.NegativeSign, absExponentString);
+                return StringHelper.Concat(mantissa, formatInfo.NegativeSign.AsSpan(), absExponentString.AsSpan());
             }
 
             string GetDecimalString(BigDecimal value, string wholePartFormat, int? fixedDecimalPlaces)
@@ -1141,12 +1162,20 @@ namespace Singulink.Numerics
                 string decimalSeparator = wholePartFormat[0] == 'C' ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
 
                 var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length);
+#if NETSTANDARD2_0
+                sb.Append(wholeString[..insertPoint]);
+#else
                 sb.Append(wholeString.AsSpan()[..insertPoint]);
+#endif
                 sb.Append(decimalSeparator);
                 sb.Append('0', decimalLeadingZeros);
                 sb.Append(decimalString);
                 sb.Append('0', decimalTrailingZeros);
-                sb.Append(wholeString.AsSpan()[insertPoint..]);
+#if NETSTANDARD2_0
+                sb.Append(wholeString[insertPoint..]);
+#else
+                sb.Append(wholeString[insertPoint..]);
+#endif
 
                 return sb.ToString();
             }
@@ -1187,9 +1216,9 @@ namespace Singulink.Numerics
             };
         }
 
-        #endregion
+#endregion
 
-        #region Equality and Comparison Methods
+#region Equality and Comparison Methods
 
         /// <summary>
         /// Compares this to another <see cref="BigDecimal"/>.
@@ -1214,9 +1243,9 @@ namespace Singulink.Numerics
         /// </summary>
         public override int GetHashCode() => HashCode.Combine(_mantissa, _exponent);
 
-        #endregion
+#endregion
 
-        #region Helper Methods
+#region Helper Methods
 
         // Moved this to a non-local method for docfx. See: https://github.com/dotnet/docfx/issues/7055
 
@@ -1239,6 +1268,6 @@ namespace Singulink.Numerics
             return value._mantissa * BigIntegerPow10.Get(value._exponent - reference._exponent);
         }
 
-        #endregion
+#endregion
     }
 }
