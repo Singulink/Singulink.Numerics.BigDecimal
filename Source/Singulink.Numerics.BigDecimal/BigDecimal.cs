@@ -306,10 +306,10 @@ namespace Singulink.Numerics
         public static BigDecimal FromSingle(float value, FloatConversion conversionMode)
         {
             return conversionMode switch {
-                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
-                FloatConversion.Truncate => FromFloat(value, 7),
                 FloatConversion.Roundtrip => FromFloat(value, 9),
+                FloatConversion.Truncate => FromFloat(value, 7),
                 FloatConversion.Exact => FromFloat(value, 0),
+                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
                 _ => throw new ArgumentOutOfRangeException(nameof(conversionMode)),
             };
         }
@@ -320,10 +320,10 @@ namespace Singulink.Numerics
         public static BigDecimal FromDouble(double value, FloatConversion conversionMode)
         {
             return conversionMode switch {
-                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
-                FloatConversion.Truncate => FromFloat(value, 15),
                 FloatConversion.Roundtrip => FromFloat(value, 17),
+                FloatConversion.Truncate => FromFloat(value, 15),
                 FloatConversion.Exact => FromFloat(value, 0),
+                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
                 _ => throw new ArgumentOutOfRangeException(nameof(conversionMode)),
             };
         }
@@ -1165,7 +1165,7 @@ namespace Singulink.Numerics
 #if NETSTANDARD2_0
                 sb.Append(wholeString[insertPoint..]);
 #else
-                sb.Append(wholeString[insertPoint..]);
+                sb.Append(wholeString.AsSpan()[insertPoint..]);
 #endif
 
                 return sb.ToString();
