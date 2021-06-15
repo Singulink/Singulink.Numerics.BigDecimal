@@ -46,15 +46,18 @@ namespace Singulink.Numerics.Tests
             Assert.AreEqual(0.33333m, BigDecimal.Divide(1, 3, 5));
             Assert.AreEqual(0.66667m, BigDecimal.Divide(2, 3, 5));
 
-            Assert.AreEqual(0.33334m, BigDecimal.Divide(1, 3, 5, MidpointRounding.ToPositiveInfinity));
-            Assert.AreEqual(0.66666m, BigDecimal.Divide(2, 3, 5, MidpointRounding.ToZero));
+            Assert.AreEqual(0.33333m, BigDecimal.Divide(1, 3, 5, RoundingMode.MidpointToPositiveInfinity));
+            Assert.AreEqual(0.33334m, BigDecimal.Divide(1, 3, 5, RoundingMode.ToPositiveInfinity));
+
+            Assert.AreEqual(0.66667m, BigDecimal.Divide(2, 3, 5, RoundingMode.MidpointToZero));
+            Assert.AreEqual(0.66666m, BigDecimal.Divide(2, 3, 5, RoundingMode.ToZero));
         }
 
         [TestMethod]
         public void Pow()
         {
             Assert.AreEqual(1m, BigDecimal.Pow(1234, 0));
-            Assert.AreEqual(0.0009765625m, BigDecimal.Pow(0.5, 10));
+            Assert.AreEqual(0.0009765625m, BigDecimal.Pow(0.5m, 10));
             Assert.AreEqual(-216000000m, BigDecimal.Pow(-600, 3));
         }
 

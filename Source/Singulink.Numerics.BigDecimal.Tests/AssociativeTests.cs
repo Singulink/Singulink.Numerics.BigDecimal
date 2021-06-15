@@ -18,16 +18,16 @@ namespace Singulink.Numerics.Tests
             BigDecimal total = 0;
 
             foreach (double v in values)
-                total += v;
+                total += BigDecimal.FromDouble(v, FloatConversion.Roundtrip);
 
             BigDecimal zeroTest1 = total;
             BigDecimal zeroTest2 = total;
 
             foreach (double v in values)
-                zeroTest1 -= v;
+                zeroTest1 -= BigDecimal.FromDouble(v, FloatConversion.Roundtrip);
 
             foreach (double v in values.Reverse())
-                zeroTest2 -= v;
+                zeroTest2 -= BigDecimal.FromDouble(v, FloatConversion.Roundtrip);
 
             Assert.AreEqual(BigDecimal.Zero, zeroTest1);
             Assert.AreEqual(BigDecimal.Zero, zeroTest2);

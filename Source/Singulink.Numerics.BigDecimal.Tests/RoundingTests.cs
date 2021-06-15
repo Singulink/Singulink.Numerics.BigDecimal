@@ -35,15 +35,15 @@ namespace Singulink.Numerics.Tests
         [TestMethod]
         public void MidpointAwayFromZero()
         {
-            Assert.AreEqual(1235m, BigDecimal.Round(1234.5m, 0, MidpointRounding.AwayFromZero));
-            Assert.AreEqual(1235m, BigDecimal.Round(1234.5675m, 0, MidpointRounding.AwayFromZero));
+            Assert.AreEqual(1235m, BigDecimal.Round(1234.5m, 0, RoundingMode.MidpointAwayFromZero));
+            Assert.AreEqual(1235m, BigDecimal.Round(1234.5675m, 0, RoundingMode.MidpointAwayFromZero));
         }
 
         [TestMethod]
         public void NegativeDecimals()
         {
             Assert.AreEqual(0m, BigDecimal.Round(500m, -3));
-            Assert.AreEqual(-1000m, BigDecimal.Round(-500m, -3, MidpointRounding.AwayFromZero));
+            Assert.AreEqual(-1000m, BigDecimal.Round(-500m, -3, RoundingMode.MidpointAwayFromZero));
         }
 
         [TestMethod]
@@ -52,7 +52,7 @@ namespace Singulink.Numerics.Tests
             // Ensures that rounding to a digit that doesn't exist in the mantissa works, i.e. 0.5 => 1
 
             Assert.AreEqual(0m, BigDecimal.Round(0.5m, 0));
-            Assert.AreEqual(1m, BigDecimal.Round(0.5m, 0, MidpointRounding.AwayFromZero));
+            Assert.AreEqual(1m, BigDecimal.Round(0.5m, 0, RoundingMode.MidpointAwayFromZero));
             Assert.AreEqual(1m, BigDecimal.Round(0.6m, 0));
             Assert.AreEqual(0m, BigDecimal.Round(0.4m, 0));
             Assert.AreEqual(0m, BigDecimal.Round(0.05m, 0));

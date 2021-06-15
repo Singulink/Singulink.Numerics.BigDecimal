@@ -16,7 +16,7 @@ namespace Singulink.Numerics
     /// All operations on <see cref="BigDecimal"/> values are exact except division in the case of a repeating decimal result. If the result of the division
     /// cannot be exactly represented in decimal form then the largest of the dividend precision, divisor precision and the specified maximum extended
     /// precision is used to represent the result. You can specify the maximum extended precision to use for each division operation by calling the <see
-    /// cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/> method or use the <see cref="DivideExact(BigDecimal, BigDecimal)"/> / <see
+    /// cref="Divide(BigDecimal, BigDecimal, int, RoundingMode)"/> method or use the <see cref="DivideExact(BigDecimal, BigDecimal)"/> / <see
     /// cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods for division operations that are expected to return exact results. The standard
     /// division operator (<c>/</c>) first attempts to do an exact division and falls back to extended precision division using <see
     /// cref="MaxExtendedDivisionPrecision"/> as the maximum extended precision parameter.</para>
@@ -24,12 +24,9 @@ namespace Singulink.Numerics
     /// Addition and subtraction are fully commutitive and associative for all converted data types. This makes <see cref="BigDecimal"/> a great data type to
     /// store aggregate totals that can freely add and subtract values without accruing inaccuracies over time.</para>
     /// <para>
-    /// Conversions from floating point types (<see cref="float"/> and <see cref="double"/>) are not "exact" when casting. This results in a <see
-    /// cref="BigDecimal"/> value that matches the output of <c>ToString()</c> on the floating point type as this is probably what is usually expected. The
-    /// <see cref="FromDouble(double, bool)"/> method is provided which accepts a parameter indicating whether an exact conversion should be used if control
-    /// over this behavior is desired. Exact conversions can result in much larger precision values being produced, i.e. a <see cref="double"/> value of
-    /// <c>0.1d</c> converts to the <see cref="BigDecimal"/> value <c>0.1000000000000000055511151231257827021181583404541015625</c> instead of
-    /// <c>0.1</c>.</para>
+    /// Conversions from floating-point types (<see cref="float"/>/<see cref="double"/>) must be done explicitly using <see cref="FromSingle(float,
+    /// FloatConversion)"/> or <see cref="FromDouble(double, FloatConversion)"/> as there are several conversion modes to choose from that are each suitable in
+    /// different situations.</para>
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>, IFormattable
@@ -38,6 +35,9 @@ namespace Singulink.Numerics
 
         private const string ToDecimalOrFloatFormat = "R";
         private const NumberStyles ToDecimalOrFloatStyle = NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
+
+        private const string FromFloatFormat = "G";
+        private const NumberStyles FromFloatStyle = NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
 
         // A max size of 1024 conveniently fits all the base2 double exponent ranges needed for the base5 cache to do fast double => BigDecimal conversions
         // and also happens to be a good limit for the base10 cache.
@@ -53,7 +53,7 @@ namespace Singulink.Numerics
         /// divisor precision is greater then that value is used instead. The current value is 50 but is subject to change.
         /// </summary>
         /// <remarks>
-        /// <para>For better control over the result of each division operation see the <see cref="Divide(BigDecimal, BigDecimal, int, MidpointRounding?)"/>,
+        /// <para>For better control over the result of each division operation see the <see cref="Divide(BigDecimal, BigDecimal, int, RoundingMode)"/>,
         /// <see cref="DivideExact(BigDecimal, BigDecimal)"/> and <see cref="TryDivideExact(BigDecimal, BigDecimal, out BigDecimal)"/> methods.</para>
         /// </remarks>
         public static int MaxExtendedDivisionPrecision => 50;
@@ -174,10 +174,6 @@ namespace Singulink.Numerics
         public static implicit operator BigDecimal(long value) => new BigDecimal(value, 0);
 
         public static implicit operator BigDecimal(ulong value) => new BigDecimal(value, 0);
-
-        public static implicit operator BigDecimal(float value) => FromDouble(value, false);
-
-        public static implicit operator BigDecimal(double value) => FromDouble(value, false);
 
         public static implicit operator BigDecimal(decimal value)
         {
@@ -305,16 +301,32 @@ namespace Singulink.Numerics
         #region Conversion Methods
 
         /// <summary>
-        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="float"/> value. If <paramref name="exactConversion"/> is <see langword="true"/> then
-        /// digits beyond the value's significant number of digits are also included.
+        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="float"/> value.
         /// </summary>
-        public static BigDecimal FromSingle(float value, bool exactConversion) => FromFloat(value, exactConversion ? 0 : 7);
+        public static BigDecimal FromSingle(float value, FloatConversion conversionMode)
+        {
+            return conversionMode switch {
+                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
+                FloatConversion.Truncate => FromFloat(value, 7),
+                FloatConversion.Roundtrip => FromFloat(value, 9),
+                FloatConversion.Exact => FromFloat(value, 0),
+                _ => throw new ArgumentOutOfRangeException(nameof(conversionMode)),
+            };
+        }
 
         /// <summary>
-        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="double"/> value. If <paramref name="exactConversion"/> is <see langword="true"/> then
-        /// digits beyond the value's significant number of digits are also included.
+        /// Gets a <see cref="BigDecimal"/> representation of a <see cref="double"/> value.
         /// </summary>
-        public static BigDecimal FromDouble(double value, bool exactConversion) => FromFloat(value, exactConversion ? 0 : 15);
+        public static BigDecimal FromDouble(double value, FloatConversion conversionMode)
+        {
+            return conversionMode switch {
+                FloatConversion.ParseString => Parse(value.ToString(FromFloatFormat, CultureInfo.InvariantCulture).AsSpan(), FromFloatStyle, CultureInfo.InvariantCulture),
+                FloatConversion.Truncate => FromFloat(value, 15),
+                FloatConversion.Roundtrip => FromFloat(value, 17),
+                FloatConversion.Exact => FromFloat(value, 0),
+                _ => throw new ArgumentOutOfRangeException(nameof(conversionMode)),
+            };
+        }
 
         private static BigDecimal FromFloat(double value, int precision)
         {
@@ -324,7 +336,7 @@ namespace Singulink.Numerics
             if (double.IsNegativeInfinity(value) || double.IsPositiveInfinity(value))
                 throw new ArgumentOutOfRangeException(nameof(value), "Cannot convert floating point infinity values.");
 
-            Debug.Assert(precision is 0 or 7 or 15, "unexpected precision value");
+            Debug.Assert(precision is 0 or 7 or 9 or 15 or 17, "unexpected precision value");
 
             unchecked {
                 // Based loosely on Jon Skeet's DoubleConverter:
@@ -408,8 +420,8 @@ namespace Singulink.Numerics
         /// <param name="divisor">The divisor of the division operation.</param>
         /// <param name="maxExtendedPrecision">If the result of the division does not fit into the precision of the dividend or divisor then this extended
         /// precision is used.</param>
-        /// <param name="mode">The rounding mode to use or <see langword="null"/> to truncate the result.</param>
-        public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision, MidpointRounding? mode = MidpointRounding.ToEven)
+        /// <param name="mode">The rounding mode to use.</param>
+        public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision, RoundingMode mode = RoundingMode.MidpointToEven)
         {
             if (divisor.IsZero)
                 throw new DivideByZeroException();
@@ -430,10 +442,7 @@ namespace Singulink.Numerics
             var dividendMantissa = dividend._mantissa * BigIntegerPow10.Get(exponentChange);
             int exponent = dividend._exponent - divisor._exponent - exponentChange;
 
-            if (mode == null) // truncate
-                return new BigDecimal(dividendMantissa / divisor._mantissa, exponent);
-
-            return new BigDecimal(dividendMantissa.Divide(divisor._mantissa, mode.GetValueOrDefault()), exponent);
+            return new BigDecimal(dividendMantissa.Divide(divisor._mantissa, mode), exponent);
         }
 
         /// <summary>
@@ -565,22 +574,9 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Rounds the value to the nearest integer using the <see cref="MidpointRounding.ToEven"/> midpoint rounding mode.
-        /// </summary>
-        public static BigDecimal Round(BigDecimal value) => Round(value, 0);
-
-        /// <summary>
-        /// Rounds the value to the specified number of decimal places using the <see cref="MidpointRounding.ToEven"/> midpoint rounding mode.
-        /// </summary>
-        /// <remarks>
-        /// <para>A negative number of decimal places indicates rounding to a whole number, i.e. <c>-1</c> for the nearest 10, <c>-2</c> for the nearest 100, etc.</para>
-        /// </remarks>
-        public static BigDecimal Round(BigDecimal value, int decimals) => Round(value, decimals, MidpointRounding.ToEven);
-
-        /// <summary>
         /// Rounds the value to the nearest integer using the given midpoint rounding mode.
         /// </summary>
-        public static BigDecimal Round(BigDecimal value, MidpointRounding mode) => Round(value, 0, mode);
+        public static BigDecimal Round(BigDecimal value, RoundingMode mode = RoundingMode.MidpointToEven) => Round(value, 0, mode);
 
         /// <summary>
         /// Rounds the value to the specified number of decimal places using the given midpoint rounding mode.
@@ -588,7 +584,7 @@ namespace Singulink.Numerics
         /// <remarks>
         /// <para>A negative number of decimal places indicates rounding to a whole number digit, i.e. <c>-1</c> for the nearest 10, <c>-2</c> for the nearest 100, etc.</para>
         /// </remarks>
-        public static BigDecimal Round(BigDecimal value, int decimals, MidpointRounding mode)
+        public static BigDecimal Round(BigDecimal value, int decimals, RoundingMode mode = RoundingMode.MidpointToEven)
         {
             int extraDigits = -value._exponent - decimals;
 
@@ -599,14 +595,9 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Rounds the value to the specified precision using the <see cref="MidpointRounding.ToEven"/> midpoint rounding mode.
-        /// </summary>
-        public static BigDecimal RoundToPrecision(BigDecimal value, int precision) => RoundToPrecision(value, precision, MidpointRounding.ToEven);
-
-        /// <summary>
         /// Rounds the value to the specified precision using the given midpoint rounding mode.
         /// </summary>
-        public static BigDecimal RoundToPrecision(BigDecimal value, int precision, MidpointRounding mode)
+        public static BigDecimal RoundToPrecision(BigDecimal value, int precision, RoundingMode mode = RoundingMode.MidpointToEven)
         {
             if (precision < 1)
                 throw new ArgumentOutOfRangeException(nameof(precision));
@@ -1029,7 +1020,7 @@ namespace Singulink.Numerics
                 }
                 else {
                     int precision = precisionSpecifier.GetValueOrDefault();
-                    value = RoundToPrecision(this, precision, MidpointRounding.AwayFromZero);
+                    value = RoundToPrecision(this, precision, RoundingMode.MidpointAwayFromZero);
 
                     if (GetEstimatedFullDecimalLength(value) > GetEstimatedExponentialLength(value)) {
                         int exponentDecimals = Math.Min(value.Precision, precision) - 1;
@@ -1047,7 +1038,7 @@ namespace Singulink.Numerics
                 string wholePartFormat = formatSpecifier == 'F' ? "F0" : "N0";
 
                 int decimals = precisionSpecifier.HasValue ? precisionSpecifier.GetValueOrDefault() : formatInfo.NumberDecimalDigits;
-                var value = Round(this, decimals, MidpointRounding.AwayFromZero);
+                var value = Round(this, decimals, RoundingMode.MidpointAwayFromZero);
 
                 if (decimals == 0)
                     return GetIntegerString(value, wholePartFormat);
@@ -1078,7 +1069,7 @@ namespace Singulink.Numerics
                 }
 
                 int decimals = precisionSpecifier.HasValue ? precisionSpecifier.GetValueOrDefault() : formatInfo.CurrencyDecimalDigits;
-                value = Round(value, decimals, MidpointRounding.AwayFromZero);
+                value = Round(value, decimals, RoundingMode.MidpointAwayFromZero);
 
                 if (decimals == 0)
                     return GetIntegerString(value, "C0");

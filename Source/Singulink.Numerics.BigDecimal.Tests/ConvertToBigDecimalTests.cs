@@ -13,25 +13,37 @@ namespace Singulink.Numerics.Tests
         [TestMethod]
         public void FromDoubleExact()
         {
-            Assert.AreEqual("0.1000000000000000055511151231257827021181583404541015625", BigDecimal.FromDouble(0.1, true).ToString());
+            Assert.AreEqual("0.1000000000000000055511151231257827021181583404541015625", BigDecimal.FromDouble(0.1, FloatConversion.Exact).ToString());
         }
 
         [TestMethod]
         public void FromSingleExact()
         {
-            Assert.AreEqual("0.100000001490116119384765625", BigDecimal.FromSingle(0.1f, true).ToString());
+            Assert.AreEqual("0.100000001490116119384765625", BigDecimal.FromSingle(0.1f, FloatConversion.Exact).ToString());
         }
 
         [TestMethod]
-        public void FromDoubleApproximate()
+        public void FromDoubleTruncate()
         {
-            Assert.AreEqual("0.1", BigDecimal.FromDouble(0.1, false).ToString());
+            Assert.AreEqual("0.1", BigDecimal.FromDouble(0.1, FloatConversion.Truncate).ToString());
         }
 
         [TestMethod]
-        public void FromSingleApproximate()
+        public void FromSingleTruncate()
         {
-            Assert.AreEqual("0.1", BigDecimal.FromSingle(0.1f, false).ToString());
+            Assert.AreEqual("0.1", BigDecimal.FromSingle(0.1f, FloatConversion.Truncate).ToString());
+        }
+
+        [TestMethod]
+        public void FromDoubleParseString()
+        {
+            Assert.AreEqual("0.1", BigDecimal.FromDouble(0.1, FloatConversion.ParseString).ToString());
+        }
+
+        [TestMethod]
+        public void FromSingleParseString()
+        {
+            Assert.AreEqual("0.1", BigDecimal.FromSingle(0.1f, FloatConversion.ParseString).ToString());
         }
     }
 }
