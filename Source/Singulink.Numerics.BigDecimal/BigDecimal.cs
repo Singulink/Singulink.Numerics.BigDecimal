@@ -101,9 +101,6 @@ namespace Singulink.Numerics
         /// </summary>
         public int Precision {
             get {
-                if (_precision == null)
-                    return 1;
-
                 if (_precision.Value != 0)
                     return _precision.Value;
 
@@ -127,7 +124,7 @@ namespace Singulink.Numerics
             if (mantissa.IsZero) {
                 _mantissa = mantissa;
                 _exponent = 0;
-                _precision = SharedPrecisionHolder.One;
+                _precision = SharedPrecisionHolder.Get(1);
             }
             else {
                 // ToString() method benchmarked faster than repeated DivRem(10), even with an exponentially increasing divisor to reduce iterations.
@@ -400,7 +397,7 @@ namespace Singulink.Numerics
                     }
                 }
 
-                return trimTrailingZeros ? new BigDecimal(resultMantissa, resultExponent) : new BigDecimal(resultMantissa, resultExponent, new SharedPrecisionHolder());
+                return trimTrailingZeros ? new BigDecimal(resultMantissa, resultExponent) : new BigDecimal(resultMantissa, resultExponent, SharedPrecisionHolder.Create());
             }
         }
 
@@ -514,7 +511,7 @@ namespace Singulink.Numerics
         /// <summary>
         /// Returns ten (10) raised to the specified exponent.
         /// </summary>
-        public static BigDecimal Pow10(int exponent) => exponent == 0 ? One : new BigDecimal(BigInteger.One, exponent, SharedPrecisionHolder.One);
+        public static BigDecimal Pow10(int exponent) => exponent == 0 ? One : new BigDecimal(BigInteger.One, exponent, SharedPrecisionHolder.Get(1));
 
         #endregion
 
@@ -1243,7 +1240,7 @@ namespace Singulink.Numerics
         [MethodImpl(MethodImplOptions.NoInlining)]
         private int GetAndCachePrecision()
         {
-            Debug.Assert(_precision != null && _precision.Value == 0, "precision is already cached");
+            Debug.Assert(_precision.Value == 0, "precision is already cached");
 
             int precision = _mantissa.CountDigits();
             _precision.Value = precision;

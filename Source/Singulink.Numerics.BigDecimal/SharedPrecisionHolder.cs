@@ -1,27 +1,35 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Singulink.Numerics
 {
     internal sealed class SharedPrecisionHolder
     {
-        private int _value;
+        private static readonly SharedPrecisionHolder[] _cache = new SharedPrecisionHolder[] { null! }
+            .Concat(Enumerable.Range(1, 200)
+                .Select(i => new SharedPrecisionHolder(i)))
+            .ToArray();
 
-        public static SharedPrecisionHolder One { get; } = new SharedPrecisionHolder(1);
+        private int _value;
 
         /// <summary>
         /// Gets a cached or new precision holder with the given value.
         /// </summary>
         public static SharedPrecisionHolder Get(int value)
         {
-            return value == 1 ? One : new SharedPrecisionHolder(value);
+            Debug.Assert(value >= 0, "invalid value");
+
+            return value < _cache.Length ? _cache[value] : new SharedPrecisionHolder(value);
         }
 
-        public SharedPrecisionHolder()
+        public static SharedPrecisionHolder Create() => new SharedPrecisionHolder();
+
+        private SharedPrecisionHolder()
         {
         }
 
-        public SharedPrecisionHolder(int value)
+        private SharedPrecisionHolder(int value)
         {
             Debug.Assert(value > 0, "specified value should be greater than 0");
             _value = value;
