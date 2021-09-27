@@ -164,6 +164,14 @@ namespace Singulink.Numerics
 
         public static implicit operator BigDecimal(BigInteger value) => new BigDecimal(value, 0);
 
+        public static implicit operator BigDecimal(byte value) => new BigDecimal(value, 0);
+
+        public static implicit operator BigDecimal(sbyte value) => new BigDecimal(value, 0);
+
+        public static implicit operator BigDecimal(short value) => new BigDecimal(value, 0);
+
+        public static implicit operator BigDecimal(ushort value) => new BigDecimal(value, 0);
+
         public static implicit operator BigDecimal(int value) => new BigDecimal(value, 0);
 
         public static implicit operator BigDecimal(uint value) => new BigDecimal(value, 0);
@@ -208,6 +216,14 @@ namespace Singulink.Numerics
             return value._exponent < 0 ? value._mantissa / BigIntegerPow10.Get(-value._exponent) : value._mantissa * BigIntegerPow10.Get(value._exponent);
         }
 
+        public static explicit operator byte(BigDecimal value) => (byte)(BigInteger)value;
+
+        public static explicit operator sbyte(BigDecimal value) => (sbyte)(BigInteger)value;
+
+        public static explicit operator short(BigDecimal value) => (short)(BigInteger)value;
+
+        public static explicit operator ushort(BigDecimal value) => (ushort)(BigInteger)value;
+
         public static explicit operator int(BigDecimal value) => (int)(BigInteger)value;
 
         public static explicit operator uint(BigDecimal value) => (uint)(BigInteger)value;
@@ -222,7 +238,7 @@ namespace Singulink.Numerics
 
         public static BigDecimal operator +(BigDecimal value) => value;
 
-        public static BigDecimal operator -(BigDecimal value) => new BigDecimal(BigInteger.Negate(value._mantissa), value._exponent, value._precision);
+        public static BigDecimal operator -(BigDecimal value) => new(BigInteger.Negate(value._mantissa), value._exponent, value._precision);
 
         public static BigDecimal operator ++(BigDecimal value) => value + One;
 
