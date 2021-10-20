@@ -942,15 +942,23 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Returns an exponential notation string representation of this value.
+        /// Returns a full-precision decimal form string representation of this value using the current culture.
         /// </summary>
         public override string ToString() => ToString(null);
 
         /// <summary>
+        /// Returns a full-precision decimal form string representation of this value.
+        /// </summary>
+        /// <param name="formatProvider">The format provider that will be used to obtain number format information. The current culture is used if none is
+        /// provided.</param>
+        public string ToString(IFormatProvider? formatProvider) => ToString(null, formatProvider);
+
+        /// <summary>
         /// Returns a string representation of this value.
         /// </summary>
-        /// <param name="format">The string format to use.</param>
-        /// <param name="formatProvider">The format provider that will be used to obtain number format information.</param>
+        /// <param name="format">The string format to use. The "G" format is used if none is provided.</param>
+        /// <param name="formatProvider">The format provider that will be used to obtain number format information. The current culture is used if none is
+        /// provided.</param>
         /// <remarks>
         /// <para>String format is composed of a format specifier followed by an optional precision specifier.</para>
         /// <para>Format specifiers:</para>
@@ -964,7 +972,7 @@ namespace Singulink.Numerics
         ///     <term>"G"</term>
         ///     <term>General</term>
         ///     <description>Default format specifier if none is provided. Precision specifier determines the number of significant digits. If the precision
-        ///     specifier is omitted then the value is written out in full precision in standard decimal form. If a precision specifier is provided then the
+        ///     specifier is omitted then the value is written out in full precision decimal form. If a precision specifier is provided then the
         ///     more compact of either decimal form or scientific notation is used.</description>
         ///   </item>
         ///   <item>
