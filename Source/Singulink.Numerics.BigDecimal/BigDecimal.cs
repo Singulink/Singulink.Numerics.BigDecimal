@@ -587,12 +587,12 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Rounds the value to the nearest integer using the given midpoint rounding mode.
+        /// Rounds the value to the nearest integer using the given rounding mode.
         /// </summary>
         public static BigDecimal Round(BigDecimal value, RoundingMode mode = RoundingMode.MidpointToEven) => Round(value, 0, mode);
 
         /// <summary>
-        /// Rounds the value to the specified number of decimal places using the given midpoint rounding mode.
+        /// Rounds the value to the specified number of decimal places using the given rounding mode.
         /// </summary>
         /// <remarks>
         /// <para>A negative number of decimal places indicates rounding to a whole number digit, i.e. <c>-1</c> for the nearest 10, <c>-2</c> for the nearest 100, etc.</para>
@@ -608,7 +608,7 @@ namespace Singulink.Numerics
         }
 
         /// <summary>
-        /// Rounds the value to the specified precision using the given midpoint rounding mode.
+        /// Rounds the value to the specified precision using the given rounding mode.
         /// </summary>
         public static BigDecimal RoundToPrecision(BigDecimal value, int precision, RoundingMode mode = RoundingMode.MidpointToEven)
         {
