@@ -4,7 +4,7 @@
 [![View nuget packages](https://img.shields.io/nuget/v/Singulink.Numerics.BigDecimal.svg)](https://www.nuget.org/packages/Singulink.Numerics.BigDecimal/)
 [![Build and Test](https://github.com/Singulink/Singulink.Numerics.BigDecimal/workflows/build%20and%20test/badge.svg)](https://github.com/Singulink/Singulink.Numerics.BigDecimal/actions?query=workflow%3A%22build+and+test%22)
 
-**BigDecimal** is a fully-featured decimal type that supports arbitrarily large precision values. It has all the mathematical operators, string conversions and parsing functionality (including full `NumberStyles` support) that you would expect from a complete implementation and performance has been highly optimized for values of all sizes. All operations are exact except for divisions that result in repeating decimals, and the behavior of all the methods is well documented so there are no surprises.
+**BigDecimal** is a fully-featured decimal type that supports arbitrarily large precision values with an API that matches standard .NET numeric types so usage should feel natural and familiar. It has all the mathematical operators, string conversions and parsing functionality (including full `NumberStyles` support) that you would expect from a complete implementation and performance has been highly optimized for values of all sizes. All operations are exact except for divisions that result in repeating decimals, and the behavior of all the methods is well documented so there are no surprises.
 
 ### About Singulink
 
