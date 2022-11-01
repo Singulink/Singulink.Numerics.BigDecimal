@@ -45,5 +45,20 @@ namespace Singulink.Numerics.Tests
         {
             Assert.AreEqual("0.1", BigDecimal.FromSingle(0.1f, FloatConversion.ParseString).ToString());
         }
+
+        [TestMethod]
+        public void FromDecimal()
+        {
+            // https://github.com/Singulink/Singulink.Numerics.BigDecimal/issues/7
+
+            decimal d = 0.04m / 3;
+            Assert.AreEqual(d.ToString(), ((BigDecimal)d).ToString());
+
+            d = 1m / 3;
+            Assert.AreEqual(d.ToString(), ((BigDecimal)d).ToString());
+
+            d = -1m / 3;
+            Assert.AreEqual(d.ToString(), ((BigDecimal)d).ToString());
+        }
     }
 }

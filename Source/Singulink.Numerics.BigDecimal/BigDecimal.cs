@@ -184,7 +184,7 @@ namespace Singulink.Numerics
         {
             ref var decimalData = ref Unsafe.As<decimal, DecimalData>(ref value);
 
-            var mantissa = (new BigInteger(decimalData.Hi) << 8) + decimalData.Lo;
+            var mantissa = (new BigInteger(decimalData.Hi) << 64) + decimalData.Lo;
 
             if (!decimalData.IsPositive)
                 mantissa = -mantissa;
