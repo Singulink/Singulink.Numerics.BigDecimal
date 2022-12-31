@@ -15,8 +15,18 @@
     }
   ],
   "build": {
-    "template": ["default", "templates/unity"],
+    "globalMetadata": {
+      "_appTitle": "Singulink.Numerics.BigDecimal",
+      "_appName": "BigDecimal",
+      "_appLogoPath": "images/logo.png",
+      "_appFaviconPath": "images/favicon.png",
+      "_copyrightFooter": "© Singulink. All rights reserved.",
+      "_enableSearch": true,
+      "_enableNewTab": true
+    },
+    "template": ["default", "templates/singulinkfx", "plugins/memberpage.2.59.4", "plugins/memberpage-extras"],
     "xrefService": [ "https://xref.docs.microsoft.com/query?uid={uid}" ],
+    "xref": [ "https://www.singulink.com/Docs/Singulink.Numerics.BigIntegerExtensions/xrefmap.yml" ],
     "content": [
       {
         "files": [

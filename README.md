@@ -23,7 +23,7 @@ The package is available on NuGet - simply install the `Singulink.Numerics.BigDe
 - Xamarin.iOS 10.14+
 - Xamarin.Android 8.0+
 
-The package multitargets .NET Standard 2.1 to offer higher performance string conversions on runtimes that support it.
+The package multitargets .NET Standard 2.1 for extra performance optimizations and .NET 7 for generic math support.
 
 ## Further Reading
 

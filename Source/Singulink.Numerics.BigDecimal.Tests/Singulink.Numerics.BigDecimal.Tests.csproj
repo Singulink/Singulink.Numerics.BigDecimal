@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5</TargetFramework>
+    <!-- Test TFMs that cover all TFMs for both BigDecimal and BigIntegerExtensions -->
+    <TargetFrameworks>netcoreapp2.2;net5.0;net7.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Singulink.Numerics.Tests</RootNamespace>
     <NoWarn>1591</NoWarn>
