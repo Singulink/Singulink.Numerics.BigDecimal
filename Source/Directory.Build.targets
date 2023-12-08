@@ -1,0 +1,34 @@
+<Project>
+    <PropertyGroup>
+        <BeforePack>$(BeforePack);AddCompatWarningsToPackage</BeforePack>
+    </PropertyGroup>
+
+    <Target Name="AddCompatWarningsToPackage">
+        <PropertyGroup>
+            <_CompatWarningFilePath>$(BaseIntermediateOutputPath)CompatWarning.targets</_CompatWarningFilePath>
+            <_CompatWarningTarget>SLCompatWarning_$(PackageId.Replace('.', '_'))</_CompatWarningTarget>
+            <_CompatWarningFileContent>
+                <![CDATA[<Project InitialTargets="$(_CompatWarningTarget)">
+  <Target Name="$(_CompatWarningTarget)"
+          Condition="'%24(SuppressTfmSupportBuildWarnings)' == ''">
+    <Warning Text="$(PackageId) $(PackageVersion) doesn't support %24(TargetFramework) and has not been tested with it. Consider upgrading your project to a version of .NET or .NET Framework that is still under support. You may also set &lt%3BSuppressTfmSupportBuildWarnings&gt%3Btrue&lt%3B/SuppressTfmSupportBuildWarnings&gt%3B in the project file to ignore this warning and attempt to run in this unsupported configuration at your own risk." />
+  </Target>
+</Project>]]>
+            </_CompatWarningFileContent>
+        </PropertyGroup>
+
+        <WriteLinesToFile File="$(_CompatWarningFilePath)"
+                          Lines="$(_CompatWarningFileContent)"
+                          Overwrite="true"
+                          WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <None Include="$(_CompatWarningFilePath)" Pack="true"
+                  PackagePath="buildTransitive\netcoreapp2.0\$(PackageId).targets;buildTransitive\net461\$(PackageId).targets"/>
+
+            <!-- Lowest supported .NET and .NET Framework TFMs go into PackagePath here: -->
+            <None Include="..\buildTransitive\_._" Pack="true"
+                  PackagePath="buildTransitive\net6.0\;buildTransitive\net462\"/>
+        </ItemGroup>
+    </Target>
+</Project>

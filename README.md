@@ -16,14 +16,12 @@ This package is part of our **Singulink Libraries** collection. Visit https://gi
 
 The package is available on NuGet - simply install the `Singulink.Numerics.BigDecimal` package.
 
-**Supported Runtimes**: Anywhere .NET Standard 2.0+ is supported, including:
-- .NET Core 2.0+
-- .NET Framework 4.6.1+
-- Mono 5.4+
-- Xamarin.iOS 10.14+
-- Xamarin.Android 8.0+
+**Supported Runtimes**: Everywhere .NET Standard 2.0 is supported, including:
+- .NET
+- .NET Framework
+- Mono / Xamarin
 
-The package multitargets .NET Standard 2.1 for extra performance optimizations and .NET 7 for generic math support.
+End-of-life runtime versions that are no longer officially supported are not tested or supported by this library.
 
 ## Further Reading
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Singulink.Numerics.Tests;
@@ -47,6 +48,8 @@ public class StringFormattingTests
     [TestMethod]
     public void Currency()
     {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+
         Assert.AreEqual("¤12,000.00", ((BigDecimal)12000m).ToString("C"));
         Assert.AreEqual("¤0.12", ((BigDecimal)0.123456m).ToString("C"));
 
@@ -64,6 +67,8 @@ public class StringFormattingTests
     [TestMethod]
     public void Percent()
     {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+
         Assert.AreEqual("50.00 %", ((BigDecimal)0.50m).ToString("P"));
         Assert.AreEqual("-50 %", ((BigDecimal)(-0.50m)).ToString("P0"));
 

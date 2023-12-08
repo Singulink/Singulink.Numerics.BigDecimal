@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- Test TFMs that cover all TFMs for both BigDecimal and BigIntegerExtensions -->
-    <TargetFrameworks>netcoreapp2.2;net5.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0;net7.0;</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Singulink.Numerics.Tests</RootNamespace>
     <NoWarn>1591</NoWarn>
@@ -18,10 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.1.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.1.1" />
-    <PackageReference Include="coverlet.collector" Version="1.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0-preview-23577-04" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
