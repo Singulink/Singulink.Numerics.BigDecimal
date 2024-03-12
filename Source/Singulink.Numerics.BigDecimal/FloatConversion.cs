@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Singulink.Numerics;
+﻿namespace Singulink.Numerics;
 
 /// <summary>
 /// Specifies floating-point conversion modes.

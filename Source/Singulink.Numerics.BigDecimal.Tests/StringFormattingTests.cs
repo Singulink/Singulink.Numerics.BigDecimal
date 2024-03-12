@@ -1,10 +1,8 @@
-﻿using System;
-using System.Globalization;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Globalization;
 
 namespace Singulink.Numerics.Tests;
 
-[TestClass]
+[PrefixTestClass]
 public class StringFormattingTests
 {
     [TestMethod]

@@ -4,22 +4,24 @@
 
 ## Overview
 
-**BigDecimal** is a fully-featured decimal type that supports arbitrarily large precision values. It has all the mathematical operators, string conversions and parsing functionality (with full `NumberStyles` support) that you would expect from a complete implementation and performance has been highly optimized for values of all sizes. All operations are exact except for divisions which result in repeating decimals, and the behavior of all the methods is well documented so there are no surprises.
+**BigDecimal** is a fully-featured decimal type that supports arbitrarily large precision values with an API that matches standard .NET numeric types so usage should feel natural and familiar. It has all the mathematical operators, string conversions and parsing functionality (including full `NumberStyles` support) that you would expect from a complete implementation and performance has been highly optimized for values of all sizes. All operations are exact except for divisions that result in repeating decimals, and the behavior of all the methods is well documented so there are no surprises.
 
-**Singulink.Numerics.BigDecimal** is part of the **Singulink Libraries** collection. Visit https://github.com/Singulink/ to see the full list of libraries available.
+### About Singulink
+
+We are a small team of engineers and designers dedicated to building beautiful, functional and well-engineered software solutions. We offer very competitive rates as well as fixed-price contracts and welcome inquiries to discuss any custom development / project support needs you may have.
+
+This package is part of our **Singulink Libraries** collection. Visit https://github.com/Singulink to see our full list of publicly available libraries and other open-source projects.
 
 ## Installation
 
 The package is available on NuGet - simply install the `Singulink.Numerics.BigDecimal` package.
 
-**Supported Runtimes**: Anywhere .NET Standard 2.0+ is supported, including:
-- .NET Core 2.0+
-- .NET Framework 4.6.1+
-- Mono 5.4+
-- Xamarin.iOS 10.14+
-- Xamarin.Android 8.0+
+**Supported Runtimes**: Everywhere .NET Standard 2.0 is supported, including:
+- .NET
+- .NET Framework
+- Mono / Xamarin
 
-The package multitargets .NET Standard 2.1 for extra performance optimizations and .NET 7 for generic math support.
+End-of-life runtime versions that are no longer officially supported are not tested or supported by this library.
 
 ## Information and Links
 

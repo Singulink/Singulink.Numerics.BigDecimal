@@ -18,7 +18,7 @@ internal readonly struct DecimalData
 
     public int Scale => unchecked((byte)(Flags >> ScaleShift));
 
-    public bool IsPositive => (Flags & SignMask) == 0;
+    public bool IsPositive => (Flags & SignMask) is 0;
 
     public DecimalData(int flags, uint hi, ulong lo)
     {
@@ -30,5 +30,5 @@ internal readonly struct DecimalData
         Lo = lo;
     }
 
-    public static bool IsValid(int flags) => unchecked((flags & ~(SignMask | ScaleMask)) == 0 && ((uint)(flags & ScaleMask) <= (28 << ScaleShift)));
+    public static bool IsValid(int flags) => unchecked((flags & ~(SignMask | ScaleMask)) is 0 && ((uint)(flags & ScaleMask) <= (28 << ScaleShift)));
 }

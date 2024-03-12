@@ -1,8 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿namespace Singulink.Numerics.Tests;
 
-namespace Singulink.Numerics.Tests;
-
-[TestClass]
+[PrefixTestClass]
 public class RoundingTests
 {
     [TestMethod]
