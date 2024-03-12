@@ -18,32 +18,56 @@ partial struct BigDecimal
     private const string FromFloatFormat = "G";
     private const NumberStyles FromFloatStyle = NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign;
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
     #region Conversions to BigDecimal
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="BigInteger"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(BigInteger value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="byte"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(byte value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="sbyte"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(sbyte value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="short"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(short value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="ushort"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(ushort value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="int"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(int value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="uint"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(uint value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="long"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(long value) => new BigDecimal(value, 0);
 
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="ulong"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(ulong value) => new BigDecimal(value, 0);
 
-    public static explicit operator BigDecimal(float value) => FromSingle(value);
-
-    public static explicit operator BigDecimal(double value) => FromDouble(value);
-
+    /// <summary>
+    /// Defines an implicit conversion from a <see cref="decimal"/> value to a <see cref="BigDecimal"/>.
+    /// </summary>
     public static implicit operator BigDecimal(decimal value)
     {
         ref var decimalData = ref Unsafe.As<decimal, DecimalData>(ref value);
@@ -56,49 +80,93 @@ partial struct BigDecimal
         return new BigDecimal(mantissa, -decimalData.Scale);
     }
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="float"/> value to a <see cref="BigDecimal"/> using the <see cref="FloatConversion.Truncate"/> mode.
+    /// </summary>
+    public static explicit operator BigDecimal(float value) => FromSingle(value);
+
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="double"/> value to a <see cref="BigDecimal"/> using the <see cref="FloatConversion.Truncate"/> mode.
+    /// </summary>
+    public static explicit operator BigDecimal(double value) => FromDouble(value);
+
     #endregion
 
     #region Conversions from BigDecimal
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="BigInteger"/>.
+    /// </summary>
     public static explicit operator BigInteger(BigDecimal value)
     {
         return value._exponent < 0 ? value._mantissa / BigIntegerPow10.Get(-value._exponent) : value._mantissa * BigIntegerPow10.Get(value._exponent);
     }
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="byte"/>.
+    /// </summary>
     public static explicit operator byte(BigDecimal value) => (byte)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="sbyte"/>.
+    /// </summary>
     public static explicit operator sbyte(BigDecimal value) => (sbyte)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="short"/>.
+    /// </summary>
     public static explicit operator short(BigDecimal value) => (short)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="ushort"/>.
+    /// </summary>
     public static explicit operator ushort(BigDecimal value) => (ushort)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="int"/>.
+    /// </summary>
     public static explicit operator int(BigDecimal value) => (int)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="uint"/>.
+    /// </summary>
     public static explicit operator uint(BigDecimal value) => (uint)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="long"/>.
+    /// </summary>
     public static explicit operator long(BigDecimal value) => (long)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="ulong"/>.
+    /// </summary>
     public static explicit operator ulong(BigDecimal value) => (ulong)(BigInteger)value;
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="float"/>.
+    /// </summary>
     public static explicit operator float(BigDecimal value)
     {
         return float.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="double"/>.
+    /// </summary>
     public static explicit operator double(BigDecimal value)
     {
         return double.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Defines an explicit conversion from a <see cref="BigDecimal"/> value to a <see cref="decimal"/>.
+    /// </summary>
     public static explicit operator decimal(BigDecimal value)
     {
         return decimal.Parse(value.ToString(ToDecimalOrFloatFormat), ToDecimalOrFloatStyle, CultureInfo.InvariantCulture);
     }
 
     #endregion
-
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
     #region Conversion Methods
 

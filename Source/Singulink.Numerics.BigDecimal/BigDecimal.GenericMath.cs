@@ -13,7 +13,9 @@ namespace Singulink.Numerics;
 /// </content>
 partial struct BigDecimal : IFloatingPoint<BigDecimal>
 {
-    /// <inheritdoc cref="INumberBase{TSelf}.CreateChecked{TOther}(TOther)" />
+    /// <summary>
+    /// Creates an instance of <see cref="BigDecimal"/> from a value.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigDecimal CreateChecked<TOther>(TOther value)
         where TOther : INumberBase<TOther>
@@ -28,7 +30,9 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         return result;
     }
 
-    /// <inheritdoc cref="INumberBase{TSelf}.CreateSaturating{TOther}(TOther)" />
+    /// <summary>
+    /// Creates an instance of <see cref="BigDecimal"/> from a value.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigDecimal CreateSaturating<TOther>(TOther value)
         where TOther : INumberBase<TOther>
@@ -43,7 +47,9 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         return result;
     }
 
-    /// <inheritdoc cref="INumberBase{TSelf}.CreateTruncating{TOther}(TOther)" />
+    /// <summary>
+    /// Creates an instance of <see cref="BigDecimal"/> from a value.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigDecimal CreateTruncating<TOther>(TOther value)
         where TOther : INumberBase<TOther>
@@ -127,7 +133,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
     private static BigDecimal _pi;
     private static BigDecimal _tau;
 
-    /// <inheritdoc cref="IFloatingPointConstants{TSelf}.E"/>
+    /// <inheritdoc />
     static BigDecimal IFloatingPointConstants<BigDecimal>.E
     {
         get {
@@ -138,7 +144,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         }
     }
 
-    /// <inheritdoc cref="IFloatingPointConstants{TSelf}.Pi"/>
+    /// <inheritdoc />
     static BigDecimal IFloatingPointConstants<BigDecimal>.Pi
     {
         get {
@@ -149,7 +155,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         }
     }
 
-    /// <inheritdoc cref="IFloatingPointConstants{TSelf}.Tau"/>
+    /// <inheritdoc />
     static BigDecimal IFloatingPointConstants<BigDecimal>.Tau
     {
         get {
@@ -160,109 +166,109 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         }
     }
 
-    /// <inheritdoc cref="ISignedNumber{TSelf}.NegativeOne"/>
+    /// <inheritdoc />
     static BigDecimal ISignedNumber<BigDecimal>.NegativeOne => MinusOne;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.Radix"/>
+    /// <inheritdoc />
     static int INumberBase<BigDecimal>.Radix => 10;
 
-    /// <inheritdoc cref="IAdditiveIdentity{TSelf, TResult}.AdditiveIdentity"/>
+    /// <inheritdoc />
     static BigDecimal IAdditiveIdentity<BigDecimal, BigDecimal>.AdditiveIdentity => Zero;
 
-    /// <inheritdoc cref="IMultiplicativeIdentity{TSelf, TResult}.MultiplicativeIdentity"/>
+    /// <inheritdoc />
     static BigDecimal IMultiplicativeIdentity<BigDecimal, BigDecimal>.MultiplicativeIdentity => One;
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.GetExponentByteCount"/>
+    /// <inheritdoc />
     int IFloatingPoint<BigDecimal>.GetExponentByteCount() => sizeof(int);
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.GetExponentShortestBitLength"/>
+    /// <inheritdoc />
     int IFloatingPoint<BigDecimal>.GetExponentShortestBitLength() => ((IBinaryInteger<int>)_exponent).GetShortestBitLength();
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.GetSignificandBitLength"/>
+    /// <inheritdoc />
     int IFloatingPoint<BigDecimal>.GetSignificandBitLength() => _mantissa.GetByteCount(false) * 8;
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.GetSignificandByteCount"/>
+    /// <inheritdoc />
     int IFloatingPoint<BigDecimal>.GetSignificandByteCount() => _mantissa.GetByteCount();
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.Round(TSelf, int, MidpointRounding)"/>
+    /// <inheritdoc />
     static BigDecimal IFloatingPoint<BigDecimal>.Round(BigDecimal x, int digits, MidpointRounding mode) => Round(x, digits, (RoundingMode)mode);
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.TryWriteExponentBigEndian(Span{byte}, out int)"/>
+    /// <inheritdoc />
     bool IFloatingPoint<BigDecimal>.TryWriteExponentBigEndian(Span<byte> destination, out int bytesWritten)
     {
         return ((IBinaryInteger<int>)_exponent).TryWriteBigEndian(destination, out bytesWritten);
     }
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.TryWriteExponentLittleEndian(Span{byte}, out int)"/>
+    /// <inheritdoc />
     bool IFloatingPoint<BigDecimal>.TryWriteExponentLittleEndian(Span<byte> destination, out int bytesWritten)
     {
         return ((IBinaryInteger<int>)_exponent).TryWriteLittleEndian(destination, out bytesWritten);
     }
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.TryWriteSignificandBigEndian(Span{byte}, out int)"/>
+    /// <inheritdoc />
     bool IFloatingPoint<BigDecimal>.TryWriteSignificandBigEndian(Span<byte> destination, out int bytesWritten)
     {
         return ((IBinaryInteger<BigInteger>)_mantissa).TryWriteBigEndian(destination, out bytesWritten);
     }
 
-    /// <inheritdoc cref="IFloatingPoint{TSelf}.TryWriteSignificandLittleEndian(Span{byte}, out int)"/>
+    /// <inheritdoc />
     bool IFloatingPoint<BigDecimal>.TryWriteSignificandLittleEndian(Span<byte> destination, out int bytesWritten)
     {
         return ((IBinaryInteger<BigInteger>)_mantissa).TryWriteLittleEndian(destination, out bytesWritten);
     }
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsCanonical(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsCanonical(BigDecimal value) => true;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsComplexNumber(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsComplexNumber(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsFinite(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsFinite(BigDecimal value) => true;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsImaginaryNumber(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsImaginaryNumber(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsInfinity(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsInfinity(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsNaN(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsNaN(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsNegativeInfinity(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsNegativeInfinity(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsNormal(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsNormal(BigDecimal value) => !value.IsZero;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsPositiveInfinity(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsPositiveInfinity(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsRealNumber(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsRealNumber(BigDecimal value) => true;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsSubnormal(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsSubnormal(BigDecimal value) => false;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.IsZero(TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.IsZero(BigDecimal value) => value.IsZero;
 
-    /// <inheritdoc cref="INumberBase{TSelf}.MaxMagnitudeNumber(TSelf, TSelf)"/>
+    /// <inheritdoc />
     static BigDecimal INumberBase<BigDecimal>.MaxMagnitudeNumber(BigDecimal x, BigDecimal y) => MaxMagnitude(x, y);
 
-    /// <inheritdoc cref="INumberBase{TSelf}.MinMagnitudeNumber(TSelf, TSelf)"/>
+    /// <inheritdoc />
     static BigDecimal INumberBase<BigDecimal>.MinMagnitudeNumber(BigDecimal x, BigDecimal y) => MinMagnitude(x, y);
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertFromChecked{TOther}(TOther, out TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertFromChecked<TOther>(TOther value, out BigDecimal result) => TryConvertFromChecked(value, out result);
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertFromSaturating{TOther}(TOther, out TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertFromSaturating<TOther>(TOther value, out BigDecimal result) => TryConvertFrom(value, out result);
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertFromTruncating{TOther}(TOther, out TSelf)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertFromTruncating<TOther>(TOther value, out BigDecimal result) => TryConvertFrom(value, out result);
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertToChecked{TOther}(TSelf, out TOther)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertToChecked<TOther>(BigDecimal value, [MaybeNullWhen(false)] out TOther result)
     {
         if (typeof(TOther) == typeof(float))
@@ -290,7 +296,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         return false;
     }
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertToSaturating{TOther}(TSelf, out TOther)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertToSaturating<TOther>(BigDecimal value, [MaybeNullWhen(false)] out TOther result)
     {
         if (typeof(TOther) == typeof(float))
@@ -321,7 +327,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         return false;
     }
 
-    /// <inheritdoc cref="INumberBase{TSelf}.TryConvertToTruncating{TOther}(TSelf, out TOther)"/>
+    /// <inheritdoc />
     static bool INumberBase<BigDecimal>.TryConvertToTruncating<TOther>(BigDecimal value, [MaybeNullWhen(false)] out TOther result)
     {
         if (typeof(TOther) == typeof(float))
@@ -352,7 +358,7 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
         return false;
     }
 
-    /// <inheritdoc cref="ISpanFormattable.TryFormat(Span{char}, out int, ReadOnlySpan{char}, IFormatProvider?)"/>
+    /// <inheritdoc />
     bool ISpanFormattable.TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
     {
         // TODO: Implement better performing option

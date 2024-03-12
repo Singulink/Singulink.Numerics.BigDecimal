@@ -1,6 +1,9 @@
 {
   "metadata": [
     {
+      "properties": {
+        "TargetFramework": "net7.0"
+      },
       "src": [
         {
           "files": [
@@ -10,7 +13,9 @@
         }
       ],
       "dest": "api",
-      "disableGitFeatures": false,
+      "memberLayout": "separatePages",
+      "includeExplicitInterfaceImplementations": true,
+      "disableGitFeatures": true,
       "disableDefaultFilter": false
     }
   ],
@@ -24,7 +29,7 @@
       "_enableSearch": true,
       "_enableNewTab": true
     },
-    "template": ["default", "templates/singulinkfx", "plugins/memberpage.2.59.4", "plugins/memberpage-extras"],
+    "template": [ "default", "templates/singulinkfx" ],
     "xrefService": [ "https://xref.docs.microsoft.com/query?uid={uid}" ],
     "xref": [ "https://www.singulink.com/Docs/Singulink.Numerics.BigIntegerExtensions/xrefmap.yml" ],
     "content": [
@@ -60,13 +65,12 @@
       }
     ],
     "dest": "_site",
+    "disableGitFeatures": true,
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "postProcessors": [],
     "markdownEngineName": "markdig",
     "noLangKeyword": false,
-    "keepFileLink": false,
-    "cleanupCacheHistory": false,
-    "disableGitFeatures": false
+    "keepFileLink": false
   }
 }
