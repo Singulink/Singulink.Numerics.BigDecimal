@@ -11,8 +11,8 @@ namespace Singulink.Numerics;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Note that this implementation of big decimal always stores values with the minimum precision possible to accurately represent the value in order to conserve
-/// memory and maintain optimal performance of operations on values.</para>
+/// This implementation of big decimal always stores values with the minimum precision possible to accurately represent the value in order to conserve memory
+/// and maintain optimal performance of operations on values.</para>
 /// <para>
 /// All operations on <see cref="BigDecimal"/> values are exact except division in the case of a repeating decimal result. If the result of the division cannot
 /// be exactly represented in decimal form then the largest of the dividend precision, divisor precision and the specified maximum extended precision is used to
@@ -21,11 +21,12 @@ namespace Singulink.Numerics;
 /// BigDecimal)"/> methods can be used for division operations that are expected to return exact results.</para>
 /// <para>
 /// The standard division operator (<c>/</c>) first attempts to do an exact division and falls back to extended precision division using <see
-/// cref="MaxExtendedDivisionPrecision"/> as the maximum extended precision parameter. It is recommended that you always specify the maximum extended precision
-/// instead of depending on the default of the operator.</para>
+/// cref="MaxExtendedDivisionPrecision"/> as the maximum extended precision parameter. It is recommended that you always use the division methods and specify
+/// the maximum extended precision instead of depending on the default of the operator.</para>
 /// <para>
-/// Addition and subtraction are fully commutative and associative for all converted data types. This makes <see cref="BigDecimal"/> a great data type to store
-/// aggregate totals that can freely add and subtract values without accruing inaccuracies over time.</para>
+/// Addition and subtraction are fully commutative and associative for all converted data types. Combined with its arbitrary precision, that makes <see
+/// cref="BigDecimal"/> a great data type to store aggregate totals that can freely add and subtract values in any order without accruing inaccuracies over time
+/// or overflowing.</para>
 /// <para>
 /// Conversions from floating-point types (<see cref="float"/>/<see cref="double"/>) default to <see cref="FloatConversion.Truncate"/> mode in order to match
 /// the behavior of floating point to <see cref="decimal"/> conversions, but there are several conversion modes available that are each suitable in different
