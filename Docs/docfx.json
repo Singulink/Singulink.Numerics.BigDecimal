@@ -2,7 +2,7 @@
   "metadata": [
     {
       "properties": {
-        "TargetFramework": "net7.0"
+        "TargetFramework": "net8.0"
       },
       "src": [
         {
@@ -13,6 +13,7 @@
         }
       ],
       "dest": "api",
+      "filter": "filterConfig.yml",
       "memberLayout": "separatePages",
       "includeExplicitInterfaceImplementations": true,
       "disableGitFeatures": true,
@@ -30,8 +31,7 @@
       "_enableNewTab": true
     },
     "template": [ "default", "templates/singulinkfx" ],
-    "xrefService": [ "https://xref.docs.microsoft.com/query?uid={uid}" ],
-    "xref": [ "https://www.singulink.com/Docs/Singulink.Numerics.BigIntegerExtensions/xrefmap.yml" ],
+    "xref": [ "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json", "https://www.singulink.com/Docs/Singulink.Numerics.BigIntegerExtensions/xrefmap.yml" ],
     "content": [
       {
         "files": [
