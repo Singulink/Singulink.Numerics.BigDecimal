@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net7.0;net8.0</TargetFrameworks>
     <RootNamespace>Singulink.Numerics</RootNamespace>
-    <Version>3.2.0</Version>
+    <Version>3.3.0</Version>
     <Authors>Singulink</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>© Singulink. All rights reserved.</Copyright>
@@ -41,13 +41,13 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="All"/>
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Singulink.Numerics.BigIntegerExtensions" Version="2.2.0" />
+    <PackageReference Include="Singulink.Numerics.BigIntegerExtensions" Version="2.3.0" />
   </ItemGroup>
 </Project>

@@ -247,7 +247,7 @@ partial struct BigDecimal : IFormattable
 
             string decimalSeparator = wholePartFormat[0] == 'C' ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
 
-            var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length);
+            var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length + decimalTrailingZeros);
 #if NETSTANDARD2_0
             sb.Append(wholeString[..insertPoint]);
 #else

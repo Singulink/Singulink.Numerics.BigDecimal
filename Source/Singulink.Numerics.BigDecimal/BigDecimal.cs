@@ -65,12 +65,12 @@ public readonly partial struct BigDecimal : IComparable<BigDecimal>, IEquatable<
     /// <summary>
     /// Gets a value representing one (1).
     /// </summary>
-    public static BigDecimal One => BigInteger.One;
+    public static BigDecimal One => new BigDecimal(BigInteger.One, 0, 1);
 
     /// <summary>
     /// Gets a value representing negative one (-1).
     /// </summary>
-    public static BigDecimal MinusOne => BigInteger.MinusOne;
+    public static BigDecimal MinusOne => new BigDecimal(BigInteger.MinusOne, 0, 1);
 
     #endregion
 
@@ -79,41 +79,13 @@ public readonly partial struct BigDecimal : IComparable<BigDecimal>, IEquatable<
     private readonly int _precision;
 
     /// <summary>
-    /// Gets a value indicating whether the current value is 0.
-    /// </summary>
-    public bool IsZero => _mantissa.IsZero;
-
-    /// <summary>
-    /// Gets a value indicating whether the current value is 1.
-    /// </summary>
-    public bool IsOne => _mantissa.IsOne && _exponent is 0;
-
-    /// <summary>
-    /// Gets a number indicating the sign (negative, positive, or zero) of the current value.
-    /// </summary>
-    public int Sign => _mantissa.Sign;
-
-    /// <summary>
-    /// Gets the precision of this value, i.e. the total number of digits it contains (excluding any leading/trailing zeros). Zero values have a precision of 1.
-    /// </summary>
-    public int Precision => _precision is 0 ? 1 : _precision;
-
-    /// <summary>
-    /// Gets the number of digits that appear after the decimal point.
-    /// </summary>
-    public int DecimalPlaces => _exponent >= 0 ? 0 : -_exponent;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private string DebuggerDisplay => ToString("G100", CultureInfo.InvariantCulture);
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="BigDecimal"/> struct.
     /// </summary>
     public BigDecimal(BigInteger mantissa, int exponent)
     {
         if (mantissa.IsZero)
         {
-            _mantissa = mantissa;
+            _mantissa = default;
             _exponent = 0;
             _precision = 0;
 
@@ -144,189 +116,40 @@ public readonly partial struct BigDecimal : IComparable<BigDecimal>, IEquatable<
         _precision = precision;
     }
 
-    #region Mathematical Functions
+    /// <summary>
+    /// Gets the number of digits that appear after the decimal point.
+    /// </summary>
+    public int DecimalPlaces => _exponent >= 0 ? 0 : -_exponent;
 
     /// <summary>
-    /// Gets the absolute value of the given value.
+    /// Gets a value indicating whether the current value is 1.
     /// </summary>
-    public static BigDecimal Abs(BigDecimal value) => value._mantissa.Sign >= 0 ? value : -value;
+    public bool IsOne => _mantissa.IsOne && _exponent is 0;
 
     /// <summary>
-    /// Performs a division operation using the specified maximum extended precision.
+    /// Gets a value indicating whether the current value is a power of 10 (i.e. 0.1, 1, 10, 100, etc.).
     /// </summary>
-    /// <param name="dividend">The dividend of the division operation.</param>
-    /// <param name="divisor">The divisor of the division operation.</param>
-    /// <param name="maxExtendedPrecision">If the result of the division does not fit into the precision of the dividend or divisor then this extended
-    /// precision is used.</param>
-    /// <param name="mode">The rounding mode to use.</param>
-    public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision, RoundingMode mode = RoundingMode.MidpointToEven)
-    {
-        if (divisor.IsZero)
-            Throw.DivideByZeroEx();
-
-        if (maxExtendedPrecision <= 0)
-            Throw.ArgumentOutOfRangeEx(nameof(maxExtendedPrecision));
-
-        if (divisor.IsOne)
-            return dividend;
-
-        if (dividend.IsZero)
-            return Zero;
-
-        // Never reduce precision of the result compared to input values but cap precision extensions to maxExtendedPrecision
-
-        int maxPrecision = Math.Max(Math.Max(maxExtendedPrecision, dividend.Precision), divisor.Precision);
-        int exponentChange = Math.Max(0, maxPrecision - dividend.Precision + divisor.Precision);
-        var dividendMantissa = dividend._mantissa * BigIntegerPow10.Get(exponentChange);
-        int exponent = dividend._exponent - divisor._exponent - exponentChange;
-
-        return new BigDecimal(dividendMantissa.Divide(divisor._mantissa, mode), exponent);
-    }
+    public bool IsPowerOfTen => _mantissa.IsOne;
 
     /// <summary>
-    /// Performs a division operation that results in an exact decimal answer (i.e. no repeating decimals).
+    /// Gets a value indicating whether the current value is 0.
     /// </summary>
-    /// <param name="dividend">The dividend of the division operation.</param>
-    /// <param name="divisor">The divisor of the division operation.</param>
-    /// <exception cref="ArithmeticException">The result could not be represented exactly as a decimal value.</exception>
-    public static BigDecimal DivideExact(BigDecimal dividend, BigDecimal divisor)
-    {
-        if (!TryDivideExact(dividend, divisor, out var result))
-            Throw.ArithmeticEx("The result of the division could not be represented exactly as a decimal value.");
-
-        return result;
-    }
+    public bool IsZero => _mantissa.IsZero;
 
     /// <summary>
-    /// Performs a division operation that results in an exact decimal answer (i.e. no repeating decimals).
+    /// Gets the precision of this value, i.e. the total number of digits it contains (excluding any leading/trailing zeros). Zero values have a precision of 1.
     /// </summary>
-    /// <param name="dividend">The dividend of the division operation.</param>
-    /// <param name="divisor">The divisor of the division operation.</param>
-    /// <param name="result">The result of the division operation.</param>
-    /// <returns><see langword="true"/> if an exact result could be produced, otherwise <see langword="false"/>.</returns>
-    public static bool TryDivideExact(BigDecimal dividend, BigDecimal divisor, out BigDecimal result)
-    {
-        if (divisor.IsZero)
-            Throw.DivideByZeroEx();
-
-        if (dividend.IsZero)
-        {
-            result = Zero;
-            return true;
-        }
-
-        if (BigInteger.Abs(divisor._mantissa).IsOne)
-        {
-            result = divisor switch
-            {
-                { IsOne: true } => dividend,
-                { Sign: < 0 } => new BigDecimal(-dividend._mantissa, dividend._exponent - divisor._exponent, dividend._precision),
-                _ => new BigDecimal(dividend._mantissa, dividend._exponent - divisor._exponent, dividend._precision),
-            };
-
-            return true;
-        }
-
-        int maxPrecision = (int)Math.Min(dividend.Precision + (long)Math.Ceiling(10.0 * divisor.Precision / 3.0), int.MaxValue);
-        int exponentChange = Math.Max(0, maxPrecision - dividend.Precision + divisor.Precision);
-        var dividendMantissa = dividend._mantissa * BigIntegerPow10.Get(exponentChange);
-
-        var mantissa = BigInteger.DivRem(dividendMantissa, divisor._mantissa, out var remainder);
-
-        if (remainder.IsZero)
-        {
-            result = new BigDecimal(mantissa, dividend._exponent - divisor._exponent - exponentChange);
-            return true;
-        }
-
-        result = Zero;
-        return false;
-    }
+    public int Precision => _precision is 0 ? 1 : _precision;
 
     /// <summary>
-    /// Returns the specified basis raised to the specified exponent. Exponent must be greater than or equal to 0.
+    /// Gets a number indicating the sign (negative, positive, or zero) of the current value.
     /// </summary>
-    public static BigDecimal Pow(BigDecimal basis, int exponent) => exponent switch
-    {
-        < 0 => Throw.ArgumentOutOfRangeEx<BigDecimal>(nameof(exponent)),
-        0 => One,
-        1 => basis,
-        _ => new BigDecimal(BigInteger.Pow(basis._mantissa, exponent), basis._exponent * exponent),
-    };
+    public int Sign => _mantissa.Sign;
 
-    /// <summary>
-    /// Returns ten (10) raised to the specified exponent.
-    /// </summary>
-    public static BigDecimal Pow10(int exponent) => exponent is 0 ? One : new BigDecimal(BigInteger.One, exponent, 1);
+    private bool IsPowerOfTenIgnoringSign => _precision is 1 && BigInteger.Abs(_mantissa).IsOne;
 
-    /// <summary>
-    /// Determines whether a value represents an integral value.
-    /// </summary>
-    public static bool IsInteger(BigDecimal value) => value._exponent >= 0;
-
-    /// <summary>
-    /// Determines whether a value represents an odd integral value.
-    /// </summary>
-    public static bool IsOddInteger(BigDecimal value) => value._exponent is 0 && !value._mantissa.IsEven;
-
-    /// <summary>
-    /// Determines whether a value represents an even integral value.
-    /// </summary>
-    public static bool IsEvenInteger(BigDecimal value) => value._exponent > 0 || (value._exponent is 0 && value._mantissa.IsEven);
-
-    /// <summary>
-    /// Determines if a value is negative.
-    /// </summary>
-    public static bool IsNegative(BigDecimal value) => value._mantissa.Sign < 0;
-
-    /// <summary>
-    /// Determines if a value is positive.
-    /// </summary>
-    public static bool IsPositive(BigDecimal value) => value._mantissa.Sign > 0;
-
-    /// <summary>
-    /// Compares to values to compute which has a greater magnitude.
-    /// </summary>
-    public static BigDecimal MaxMagnitude(BigDecimal x, BigDecimal y)
-    {
-        var ax = Abs(x);
-        var ay = Abs(y);
-
-        if (ax > ay)
-        {
-            return x;
-        }
-
-        if (ax == ay)
-        {
-            return IsNegative(x) ? y : x;
-        }
-
-        return y;
-    }
-
-    /// <summary>
-    /// Compares to values to compute which has a lesser magnitude.
-    /// </summary>
-    public static BigDecimal MinMagnitude(BigDecimal x, BigDecimal y)
-    {
-        var ax = Abs(x);
-        var ay = Abs(y);
-
-        if (ax < ay)
-        {
-            return x;
-        }
-
-        if (ax == ay)
-        {
-            return IsNegative(x) ? x : y;
-        }
-
-        return y;
-    }
-
-    #endregion
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private string DebuggerDisplay => ToString("G100", CultureInfo.InvariantCulture);
 
     #region Equality and Comparison Methods
 
@@ -361,19 +184,6 @@ public readonly partial struct BigDecimal : IComparable<BigDecimal>, IEquatable<
     /// Returns the hash code for this value.
     /// </summary>
     public override int GetHashCode() => HashCode.Combine(_mantissa, _exponent);
-
-    #endregion
-
-    #region Helper Methods
-
-    /// <summary>
-    /// Returns the mantissa of value, aligned to the reference exponent. Assumes the value exponent is larger than the reference exponent.
-    /// </summary>
-    private static BigInteger AlignMantissa(BigDecimal value, BigDecimal reference)
-    {
-        Debug.Assert(value._exponent >= reference._exponent, "value exponent must be greater than or equal to reference exponent");
-        return value._mantissa * BigIntegerPow10.Get(value._exponent - reference._exponent);
-    }
 
     #endregion
 }

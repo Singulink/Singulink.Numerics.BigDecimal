@@ -51,6 +51,39 @@ public class MathOperationTests
     }
 
     [TestMethod]
+    public void RoundedDivision()
+    {
+        Assert.AreEqual(3.33333m, BigDecimal.DivideRounded(10, 3, 5));
+        Assert.AreEqual(6.66667m, BigDecimal.DivideRounded(20, 3, 5));
+
+        Assert.AreEqual(3.33333m, BigDecimal.DivideRounded(10, 3, 5, RoundingMode.MidpointToPositiveInfinity));
+        Assert.AreEqual(3.33334m, BigDecimal.DivideRounded(10, 3, 5, RoundingMode.ToPositiveInfinity));
+
+        Assert.AreEqual(6.66667m, BigDecimal.DivideRounded(20, 3, 5, RoundingMode.MidpointToZero));
+        Assert.AreEqual(6.66666m, BigDecimal.DivideRounded(20, 3, 5, RoundingMode.ToZero));
+
+        Assert.AreEqual(20m, BigDecimal.DivideRounded(25, 1, -1, RoundingMode.MidpointToEven));
+        Assert.AreEqual(40m, BigDecimal.DivideRounded(35, 1, -1, RoundingMode.MidpointToEven));
+
+        Assert.AreEqual(1m, BigDecimal.DivideRounded(1, 3, 0, RoundingMode.ToPositiveInfinity));
+        Assert.AreEqual(0m, BigDecimal.DivideRounded(1, 3, 0, RoundingMode.ToNegativeInfinity));
+
+        Assert.AreEqual(2m, BigDecimal.DivideRounded(5, 2, 0, RoundingMode.MidpointToEven));
+        Assert.AreEqual(8m, BigDecimal.DivideRounded(15, 2, 0, RoundingMode.MidpointToEven));
+
+        Assert.AreEqual(25m, BigDecimal.DivideRounded(100, 4, 2));
+        Assert.AreEqual(0.5m, BigDecimal.DivideRounded(1, 2, 3));
+
+        Assert.AreEqual(0.67m, BigDecimal.DivideRounded(2, 3, 2));
+
+        Assert.AreEqual(12.34m, BigDecimal.DivideRounded(123.45m, 10m, 2));
+
+        Assert.AreEqual(1.2m, BigDecimal.DivideRounded(123.45m, 100m, 1));
+
+        Assert.AreEqual(0.125m, BigDecimal.DivideRounded(1, 8, 5));
+    }
+
+    [TestMethod]
     public void Pow()
     {
         Assert.AreEqual(1m, BigDecimal.Pow(1234, 0));

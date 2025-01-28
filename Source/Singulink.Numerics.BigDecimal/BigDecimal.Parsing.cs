@@ -59,11 +59,19 @@ partial struct BigDecimal
     /// <returns><see langword="true"/> if parsing was successful, otherwise <see langword="false"/>.</returns>
     public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out BigDecimal result)
     {
-        if (style.HasFlag(NumberStyles.AllowHexSpecifier))
-            Throw.ArgumentEx("Hex number styles are not supported.", nameof(style));
+        const NumberStyles AllowedStyles =
+            NumberStyles.AllowCurrencySymbol |
+            NumberStyles.AllowLeadingWhite |
+            NumberStyles.AllowLeadingSign |
+            NumberStyles.AllowTrailingWhite |
+            NumberStyles.AllowTrailingSign |
+            NumberStyles.AllowParentheses |
+            NumberStyles.AllowExponent |
+            NumberStyles.AllowDecimalPoint |
+            NumberStyles.AllowThousands;
 
-        var formatInfo = NumberFormatInfo.GetInstance(provider);
-        const StringComparison cmp = StringComparison.Ordinal;
+        if ((style & ~AllowedStyles) != 0)
+            Throw.ArgumentEx("Unsupported or invalid number styles specified.", nameof(style));
 
         bool allowCurrencySymbol = style.HasFlag(NumberStyles.AllowCurrencySymbol);
         bool allowLeadingWhite = style.HasFlag(NumberStyles.AllowLeadingWhite);
@@ -75,10 +83,14 @@ partial struct BigDecimal
         bool allowDecimalPoint = style.HasFlag(NumberStyles.AllowDecimalPoint);
         bool allowThousands = style.HasFlag(NumberStyles.AllowThousands);
 
-        bool currency = false;
+        var formatInfo = NumberFormatInfo.GetInstance(provider);
+
+        const StringComparison Ordinal = StringComparison.Ordinal;
+        bool hasCurrencySymbol = false;
         int sign = 0;
 
-        Trim(ref s);
+        s = s.TrimEnd('\0');
+        TrimIfAllowed(ref s);
 
         if (TryParseParenthesis(ref s) &&
             TryParseStart(ref s) &&
@@ -111,7 +123,6 @@ partial struct BigDecimal
 
                 sign = -1;
                 s = s[1..^1];
-                Trim(ref s);
             }
 
             return true;
@@ -119,14 +130,14 @@ partial struct BigDecimal
 
         bool TryParseStart(ref ReadOnlySpan<char> s)
         {
-            while (s.Length > 0 && !char.IsDigit(s[0]) && !s.StartsWith(formatInfo.NumberDecimalSeparator.AsSpan(), cmp))
+            while (s.Length > 0 && !char.IsDigit(s[0]) && !s.StartsWith(formatInfo.NumberDecimalSeparator.AsSpan(), Ordinal))
             {
-                if (allowCurrencySymbol && s.StartsWith(formatInfo.CurrencySymbol.AsSpan(), cmp))
+                if (allowCurrencySymbol && s.StartsWith(formatInfo.CurrencySymbol.AsSpan(), Ordinal))
                 {
-                    if (currency)
+                    if (hasCurrencySymbol)
                         return false;
 
-                    currency = true;
+                    hasCurrencySymbol = true;
                     s = s[formatInfo.CurrencySymbol.Length..];
                 }
                 else if (allowLeadingSign && StartsWithSign(s, out int parsedSign, out int signLength))
@@ -142,20 +153,20 @@ partial struct BigDecimal
                     return false;
                 }
 
-                TrimStart(ref s);
+                TrimStartIfAllowed(ref s);
             }
 
             return true;
 
             bool StartsWithSign(ReadOnlySpan<char> s, out int sign, out int signLength)
             {
-                if (s.StartsWith(formatInfo.PositiveSign.AsSpan(), cmp))
+                if (s.StartsWith(formatInfo.PositiveSign.AsSpan(), Ordinal))
                 {
                     sign = 1;
                     signLength = formatInfo.PositiveSign.Length;
                     return true;
                 }
-                else if (s.StartsWith(formatInfo.NegativeSign.AsSpan(), cmp))
+                else if (s.StartsWith(formatInfo.NegativeSign.AsSpan(), Ordinal))
                 {
                     sign = -1;
                     signLength = formatInfo.NegativeSign.Length;
@@ -170,14 +181,14 @@ partial struct BigDecimal
 
         bool TryParseEnd(ref ReadOnlySpan<char> s)
         {
-            while (s.Length > 0 && !char.IsDigit(s[^1]) && !s.EndsWith(formatInfo.NumberDecimalSeparator.AsSpan(), cmp))
+            while (s.Length > 0 && !char.IsDigit(s[^1]) && !s.EndsWith(formatInfo.NumberDecimalSeparator.AsSpan(), Ordinal))
             {
-                if (allowCurrencySymbol && s.EndsWith(formatInfo.CurrencySymbol.AsSpan(), cmp))
+                if (allowCurrencySymbol && s.EndsWith(formatInfo.CurrencySymbol.AsSpan(), Ordinal))
                 {
-                    if (currency)
+                    if (hasCurrencySymbol)
                         return false;
 
-                    currency = true;
+                    hasCurrencySymbol = true;
                     s = s[..^formatInfo.CurrencySymbol.Length];
                 }
                 else if (allowTrailingSign && EndsWithSign(s, out int parsedSign, out int signLength))
@@ -193,20 +204,20 @@ partial struct BigDecimal
                     return false;
                 }
 
-                TrimEnd(ref s);
+                TrimEndIfAllowed(ref s);
             }
 
             return true;
 
             bool EndsWithSign(ReadOnlySpan<char> s, out int sign, out int signLength)
             {
-                if (s.EndsWith(formatInfo.PositiveSign.AsSpan(), cmp))
+                if (s.EndsWith(formatInfo.PositiveSign.AsSpan(), Ordinal))
                 {
                     sign = 1;
                     signLength = formatInfo.PositiveSign.Length;
                     return true;
                 }
-                else if (s.EndsWith(formatInfo.NegativeSign.AsSpan(), cmp))
+                else if (s.EndsWith(formatInfo.NegativeSign.AsSpan(), Ordinal))
                 {
                     sign = -1;
                     signLength = formatInfo.NegativeSign.Length;
@@ -229,6 +240,13 @@ partial struct BigDecimal
                 {
                     var e = s[(index + 1)..];
                     s = s[..index];
+
+                    if (EndsWithNullTerminator(e))
+                    {
+                        result = default;
+                        return false;
+                    }
+
 #if NETSTANDARD2_0
                     return int.TryParse(e.ToString(), NumberStyles.AllowLeadingSign, provider, out result);
 #else
@@ -260,6 +278,12 @@ partial struct BigDecimal
             int exponent = -f.Length;
             f = f.TrimStart('0');
 
+            if (EndsWithNullTerminator(f))
+            {
+                result = null;
+                return false;
+            }
+
 #if NETSTANDARD2_0
             if (!BigInteger.TryParse(f.ToString(), NumberStyles.None, provider, out var mantissa))
 #else
@@ -275,8 +299,8 @@ partial struct BigDecimal
 
             bool SplitFractional(ref ReadOnlySpan<char> s, out ReadOnlySpan<char> f)
             {
-                string decimalSeparator = currency ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
-                int decimalIndex = s.IndexOf(decimalSeparator.AsSpan(), cmp);
+                string decimalSeparator = allowCurrencySymbol ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
+                int decimalIndex = s.IndexOf(decimalSeparator.AsSpan(), Ordinal);
 
                 if (decimalIndex >= 0)
                 {
@@ -313,6 +337,12 @@ partial struct BigDecimal
 
             var (wholeStyle, wholeFormatInfo) = GetWholeStyleAndInfo();
 
+            if (EndsWithNullTerminator(s))
+            {
+                result = null;
+                return false;
+            }
+
 #if NETSTANDARD2_0
             if (!BigInteger.TryParse(s.ToString(), wholeStyle, wholeFormatInfo, out var mantissa))
 #else
@@ -334,7 +364,7 @@ partial struct BigDecimal
             {
                 if (allowThousands)
                 {
-                    if (currency && formatInfo.CurrencyGroupSeparator != formatInfo.NumberGroupSeparator)
+                    if (allowCurrencySymbol && formatInfo.CurrencyGroupSeparator != formatInfo.NumberGroupSeparator)
                     {
                         var copy = (NumberFormatInfo)formatInfo.Clone();
                         copy.NumberGroupSeparator = formatInfo.CurrencyGroupSeparator;
@@ -351,19 +381,21 @@ partial struct BigDecimal
             }
         }
 
-        void Trim(ref ReadOnlySpan<char> s)
+        bool EndsWithNullTerminator(ReadOnlySpan<char> s) => s.Length > 0 && s[^1] == '\0';
+
+        void TrimIfAllowed(ref ReadOnlySpan<char> s)
         {
-            TrimStart(ref s);
-            TrimEnd(ref s);
+            TrimStartIfAllowed(ref s);
+            TrimEndIfAllowed(ref s);
         }
 
-        void TrimStart(ref ReadOnlySpan<char> s)
+        void TrimStartIfAllowed(ref ReadOnlySpan<char> s)
         {
             if (allowLeadingWhite)
                 s = s.TrimStart();
         }
 
-        void TrimEnd(ref ReadOnlySpan<char> s)
+        void TrimEndIfAllowed(ref ReadOnlySpan<char> s)
         {
             if (allowTrailingWhite)
                 s = s.TrimEnd();
