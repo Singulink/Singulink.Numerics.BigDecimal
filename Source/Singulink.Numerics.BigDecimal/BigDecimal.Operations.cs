@@ -247,7 +247,13 @@ partial struct BigDecimal
     /// moves the decimal point to the right (i.e. increases the exponent) and a negative shift moves the decimal point to the left (i.e. decreases the
     /// exponent).
     /// </summary>
-    public static BigDecimal ShiftDecimal(BigDecimal value, int shift) => new BigDecimal(value._mantissa, value._exponent + shift, value._precision);
+    public static BigDecimal ShiftDecimal(BigDecimal value, int shift)
+    {
+        if (value.IsZero)
+            return Zero;
+
+        return new BigDecimal(value._mantissa, value._exponent + shift, value._precision);
+    }
 
     /// <summary>
     /// Performs a division operation that results in an exact decimal answer (i.e. no repeating decimals).
