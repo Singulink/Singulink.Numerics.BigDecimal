@@ -8,7 +8,7 @@ internal static class StringHelper
 {
     public static unsafe string Concat(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2, ReadOnlySpan<char> s3)
     {
-#if NETSTANDARD2_0
+#if NETSTANDARD
         return s1.ToString() + (s2.ToString() + s3.ToString());
 #else
         var p1 = &s1;
@@ -23,8 +23,8 @@ internal static class StringHelper
             var s3 = *(ReadOnlySpan<char>*)data.p3;
 
             s1.CopyTo(span);
-            s2.CopyTo(span = span.Slice(s1.Length));
-            s3.CopyTo(span.Slice(s2.Length));
+            s2.CopyTo(span = span[s1.Length..]);
+            s3.CopyTo(span[s2.Length..]);
         });
 #endif
     }

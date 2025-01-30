@@ -247,7 +247,7 @@ partial struct BigDecimal
                         return false;
                     }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
                     return int.TryParse(e.ToString(), NumberStyles.AllowLeadingSign, provider, out result);
 #else
                     return int.TryParse(e, NumberStyles.AllowLeadingSign, provider, out result);
@@ -284,7 +284,7 @@ partial struct BigDecimal
                 return false;
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             if (!BigInteger.TryParse(f.ToString(), NumberStyles.None, provider, out var mantissa))
 #else
             if (!BigInteger.TryParse(f, NumberStyles.None, provider, out var mantissa))
@@ -343,7 +343,7 @@ partial struct BigDecimal
                 return false;
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             if (!BigInteger.TryParse(s.ToString(), wholeStyle, wholeFormatInfo, out var mantissa))
 #else
             if (!BigInteger.TryParse(s, wholeStyle, wholeFormatInfo, out var mantissa))

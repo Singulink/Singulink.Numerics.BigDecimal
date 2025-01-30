@@ -1,6 +1,6 @@
 ﻿namespace System.Diagnostics.CodeAnalysis;
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 internal sealed class DoesNotReturnAttribute : Attribute

@@ -89,7 +89,7 @@ partial struct BigDecimal : IFormattable
 
             if (format.Length > 1)
             {
-#if NETSTANDARD2_0
+#if NETSTANDARD
                 if (int.TryParse(format[1..], NumberStyles.None, CultureInfo.InvariantCulture, out int ps))
 #else
                 if (int.TryParse(format.AsSpan()[1..], NumberStyles.None, CultureInfo.InvariantCulture, out int ps))
@@ -199,7 +199,7 @@ partial struct BigDecimal : IFormattable
 
             int eIndex = result.LastIndexOf("E", StringComparison.Ordinal);
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             string exponentString = result[(eIndex + 1)..];
 #else
             var exponentString = result.AsSpan()[(eIndex + 1)..];
@@ -248,7 +248,7 @@ partial struct BigDecimal : IFormattable
             string decimalSeparator = wholePartFormat[0] == 'C' ? formatInfo.CurrencyDecimalSeparator : formatInfo.NumberDecimalSeparator;
 
             var sb = new StringBuilder(wholeString.Length + decimalSeparator.Length + decimalLeadingZeros + decimalString.Length + decimalTrailingZeros);
-#if NETSTANDARD2_0
+#if NETSTANDARD
             sb.Append(wholeString[..insertPoint]);
 #else
             sb.Append(wholeString.AsSpan()[..insertPoint]);
@@ -257,7 +257,7 @@ partial struct BigDecimal : IFormattable
             sb.Append('0', decimalLeadingZeros);
             sb.Append(decimalString);
             sb.Append('0', decimalTrailingZeros);
-#if NETSTANDARD2_0
+#if NETSTANDARD
             sb.Append(wholeString[insertPoint..]);
 #else
             sb.Append(wholeString.AsSpan()[insertPoint..]);

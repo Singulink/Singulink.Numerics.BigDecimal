@@ -6,7 +6,7 @@ using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics;
 
-#if NET7_0_OR_GREATER
+#if NET
 
 /// <content>
 /// Contains .NET7+ generic math support for <see cref="BigDecimal"/>.
