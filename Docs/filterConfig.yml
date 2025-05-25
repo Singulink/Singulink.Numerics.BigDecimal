@@ -6,8 +6,12 @@ apiRules:
     uidRegex: GlobalStaticResources
     type: Class
 
-# Hide inherited object members
+# Hide inherited object/ValueType members
 
 - exclude:
       uidRegex: ^System\.Object
+      type: Type
+
+- exclude:
+      uidRegex: ^System\.ValueType
       type: Type

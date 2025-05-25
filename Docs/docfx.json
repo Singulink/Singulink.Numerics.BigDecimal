@@ -13,11 +13,11 @@
         }
       ],
       "dest": "api",
-      "filter": "filterConfig.yml",
       "memberLayout": "separatePages",
       "includeExplicitInterfaceImplementations": true,
       "disableGitFeatures": true,
-      "disableDefaultFilter": false
+      "disableDefaultFilter": false,
+      "filter": "filterConfig.yml"
     }
   ],
   "build": {
