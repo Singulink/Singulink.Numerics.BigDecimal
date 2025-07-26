@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Test TFMs that cover all TFMs for both BigDecimal and BigIntegerExtensions -->
-    <TargetFrameworks>net48;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Singulink.Numerics.Tests</RootNamespace>
     <NoWarn>1591</NoWarn>

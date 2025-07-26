@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
+using Singulink.Enums;
 using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics;
@@ -70,18 +71,18 @@ partial struct BigDecimal
             NumberStyles.AllowDecimalPoint |
             NumberStyles.AllowThousands;
 
-        if ((style & ~AllowedStyles) != 0)
-            Throw.ArgumentEx("Unsupported or invalid number styles specified.", nameof(style));
+        if (!AllowedStyles.HasAllFlags(style))
+            Throw.ArgumentOutOfRangeEx("Unsupported or invalid number styles specified.", nameof(style));
 
-        bool allowCurrencySymbol = style.HasFlag(NumberStyles.AllowCurrencySymbol);
-        bool allowLeadingWhite = style.HasFlag(NumberStyles.AllowLeadingWhite);
-        bool allowLeadingSign = style.HasFlag(NumberStyles.AllowLeadingSign);
-        bool allowTrailingWhite = style.HasFlag(NumberStyles.AllowTrailingWhite);
-        bool allowTrailingSign = style.HasFlag(NumberStyles.AllowTrailingSign);
-        bool allowParenthesis = style.HasFlag(NumberStyles.AllowParentheses);
-        bool allowExponent = style.HasFlag(NumberStyles.AllowExponent);
-        bool allowDecimalPoint = style.HasFlag(NumberStyles.AllowDecimalPoint);
-        bool allowThousands = style.HasFlag(NumberStyles.AllowThousands);
+        bool allowCurrencySymbol = style.HasAllFlags(NumberStyles.AllowCurrencySymbol);
+        bool allowLeadingWhite = style.HasAllFlags(NumberStyles.AllowLeadingWhite);
+        bool allowLeadingSign = style.HasAllFlags(NumberStyles.AllowLeadingSign);
+        bool allowTrailingWhite = style.HasAllFlags(NumberStyles.AllowTrailingWhite);
+        bool allowTrailingSign = style.HasAllFlags(NumberStyles.AllowTrailingSign);
+        bool allowParenthesis = style.HasAllFlags(NumberStyles.AllowParentheses);
+        bool allowExponent = style.HasAllFlags(NumberStyles.AllowExponent);
+        bool allowDecimalPoint = style.HasAllFlags(NumberStyles.AllowDecimalPoint);
+        bool allowThousands = style.HasAllFlags(NumberStyles.AllowThousands);
 
         var formatInfo = NumberFormatInfo.GetInstance(provider);
 

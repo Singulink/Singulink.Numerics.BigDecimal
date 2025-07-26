@@ -1,4 +1,5 @@
-﻿using Singulink.Numerics.Utilities;
+﻿using Singulink.Enums;
+using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics;
 
@@ -73,6 +74,8 @@ partial struct BigDecimal
     /// </remarks>
     public static BigDecimal Round(BigDecimal value, int decimals, RoundingMode mode = RoundingMode.MidpointToEven)
     {
+        mode.ThrowIfNotDefined(nameof(mode));
+
         int extraDigits = -value._exponent - decimals;
 
         if (extraDigits <= 0)
@@ -88,6 +91,8 @@ partial struct BigDecimal
     {
         if (precision < 1)
             Throw.ArgumentOutOfRangeEx(nameof(precision));
+
+        mode.ThrowIfNotDefined(nameof(mode));
 
         int extraDigits = value.Precision - precision;
 

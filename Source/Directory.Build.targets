@@ -28,7 +28,7 @@
 
             <!-- Lowest supported .NET and .NET Framework TFMs go into PackagePath here: -->
             <None Include="..\buildTransitive\_._" Pack="true"
-                  PackagePath="buildTransitive\net6.0\;buildTransitive\net462\"/>
+                  PackagePath="buildTransitive\net8.0\;buildTransitive\net462\"/>
         </ItemGroup>
     </Target>
 </Project>

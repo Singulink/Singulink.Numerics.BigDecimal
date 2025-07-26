@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
+using Singulink.Enums;
 using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics;
@@ -98,11 +99,13 @@ partial struct BigDecimal
     /// <param name="mode">The rounding mode to use.</param>
     public static BigDecimal Divide(BigDecimal dividend, BigDecimal divisor, int maxExtendedPrecision, RoundingMode mode = RoundingMode.MidpointToEven)
     {
-        if (divisor.IsZero)
-            Throw.DivideByZeroEx();
-
         if (maxExtendedPrecision <= 0)
             Throw.ArgumentOutOfRangeEx(nameof(maxExtendedPrecision));
+
+        mode.ThrowIfNotDefined(nameof(mode));
+
+        if (divisor.IsZero)
+            Throw.DivideByZeroEx();
 
         if (dividend.IsZero)
             return Zero;
@@ -143,6 +146,8 @@ partial struct BigDecimal
     /// <param name="mode">The rounding mode to use.</param>
     public static BigDecimal DivideRounded(BigDecimal dividend, BigDecimal divisor, int decimals, RoundingMode mode = RoundingMode.MidpointToEven)
     {
+        mode.ThrowIfNotDefined(nameof(mode));
+
         if (divisor.IsZero)
             Throw.DivideByZeroEx();
 
