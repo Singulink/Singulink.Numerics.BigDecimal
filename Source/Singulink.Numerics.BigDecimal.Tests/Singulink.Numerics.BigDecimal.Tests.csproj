@@ -2,6 +2,8 @@
   <PropertyGroup>
     <!-- Test TFMs that cover all TFMs for both BigDecimal and BigIntegerExtensions -->
     <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <!-- .NET 11 changed BigInteger internals so also run tests on it when the SDK in use supports it -->
+    <TargetFrameworks Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '11.0'))">$(TargetFrameworks);net11.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <RootNamespace>Singulink.Numerics.Tests</RootNamespace>
     <NoWarn>1591</NoWarn>

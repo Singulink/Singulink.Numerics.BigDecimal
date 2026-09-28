@@ -29,6 +29,9 @@ namespace Singulink.Numerics.Utilities
         public static void FormatEx(string message) => throw new FormatException(message);
 
         [DoesNotReturn]
+        public static T FormatEx<T>(string message) => throw new FormatException(message);
+
+        [DoesNotReturn]
         public static void NotSupportedEx() => throw new NotSupportedException();
 
         [DoesNotReturn]

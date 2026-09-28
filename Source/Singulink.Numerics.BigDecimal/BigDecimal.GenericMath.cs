@@ -1,12 +1,12 @@
-﻿using System;
+﻿#if NET
+
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Singulink.Numerics.Utilities;
 
 namespace Singulink.Numerics;
-
-#if NET
 
 /// <content>
 /// Contains .NET7+ generic math support for <see cref="BigDecimal"/>.
@@ -356,24 +356,6 @@ partial struct BigDecimal : IFloatingPoint<BigDecimal>
 
         result = default;
         return false;
-    }
-
-    /// <inheritdoc />
-    bool ISpanFormattable.TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
-    {
-        // TODO: Implement better performing option
-
-        string s = ToString(format.ToString(), provider);
-
-        if (destination.Length < s.Length)
-        {
-            charsWritten = 0;
-            return false;
-        }
-
-        s.CopyTo(destination);
-        charsWritten = s.Length;
-        return true;
     }
 
     #endregion

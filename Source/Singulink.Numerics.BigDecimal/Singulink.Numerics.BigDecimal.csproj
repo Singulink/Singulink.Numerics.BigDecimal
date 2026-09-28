@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <RootNamespace>Singulink.Numerics</RootNamespace>
-    <Version>3.4.0</Version>
+    <Version>3.5.0</Version>
     <Authors>Singulink</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>© Singulink. All rights reserved.</Copyright>
@@ -49,6 +49,6 @@
 
   <ItemGroup>
     <PackageReference Include="Singulink.Enums" Version="2.3.1" />
-    <PackageReference Include="Singulink.Numerics.BigIntegerExtensions" Version="2.3.2" />
+    <PackageReference Include="Singulink.Numerics.BigIntegerExtensions" Version="2.4.0" />
   </ItemGroup>
 </Project>
