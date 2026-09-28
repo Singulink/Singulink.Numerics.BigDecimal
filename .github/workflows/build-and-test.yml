@@ -18,6 +18,7 @@ jobs:
       with:
         dotnet-version: |
           8.0.x
+          11.0.100-rc.1.26425.128
     - name: Install dependencies
       run: dotnet restore
       working-directory: Source
@@ -39,6 +40,7 @@ jobs:
       with:
         dotnet-version: |
           8.0.x
+          11.0.100-rc.1.26425.128
     - name: Install dependencies
       run: dotnet restore
       working-directory: Source
