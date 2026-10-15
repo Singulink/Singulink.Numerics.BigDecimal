@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <RootNamespace>Singulink.Numerics</RootNamespace>
-    <Version>3.5.0</Version>
+    <Version>3.5.1</Version>
     <Authors>Singulink</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>© Singulink. All rights reserved.</Copyright>

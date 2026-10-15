@@ -11,7 +11,7 @@
 
   <ItemGroup Label="Singulink">
     <PackageVersion Include="Singulink.Enums" Version="3.0.0" />
-    <PackageVersion Include="Singulink.Numerics.BigIntegerExtensions" Version="2.4.0" />
+    <PackageVersion Include="Singulink.Numerics.BigIntegerExtensions" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
