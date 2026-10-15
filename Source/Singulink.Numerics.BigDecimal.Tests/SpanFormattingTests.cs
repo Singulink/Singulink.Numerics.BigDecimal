@@ -126,10 +126,10 @@ public class SpanFormattingTests
         var value = FormattingTestData.ParseValue("1.5");
         char[] buffer = new char[64];
 
-        Assert.ThrowsException<FormatException>(() => value.TryFormat(buffer, out _, "X".AsSpan(), CultureInfo.InvariantCulture));
-        Assert.ThrowsException<FormatException>(() => value.TryFormat(buffer, out _, "F 2".AsSpan(), CultureInfo.InvariantCulture));
-        Assert.ThrowsException<FormatException>(() => value.TryFormat(buffer, out _, "G-1".AsSpan(), CultureInfo.InvariantCulture));
-        Assert.ThrowsException<FormatException>(() => value.TryFormat(buffer, out _, "G99999999999".AsSpan(), CultureInfo.InvariantCulture));
+        Assert.ThrowsExactly<FormatException>(() => value.TryFormat(buffer, out _, "X".AsSpan(), CultureInfo.InvariantCulture));
+        Assert.ThrowsExactly<FormatException>(() => value.TryFormat(buffer, out _, "F 2".AsSpan(), CultureInfo.InvariantCulture));
+        Assert.ThrowsExactly<FormatException>(() => value.TryFormat(buffer, out _, "G-1".AsSpan(), CultureInfo.InvariantCulture));
+        Assert.ThrowsExactly<FormatException>(() => value.TryFormat(buffer, out _, "G99999999999".AsSpan(), CultureInfo.InvariantCulture));
     }
 
 #if NET

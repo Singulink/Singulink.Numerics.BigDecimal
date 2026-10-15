@@ -214,14 +214,14 @@ public class StringFormattingTests
         Assert.AreEqual("150.00 %", value.ToString("p", inv));
         Assert.AreEqual("15E-1", value.ToString("r", inv));
 
-        Assert.ThrowsException<FormatException>(() => value.ToString("X", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("F 2", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("G-1", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("F2abc", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("Gx", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("G99999999999", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("E+1", inv));
-        Assert.ThrowsException<FormatException>(() => value.ToString("F2.0", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("X", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("F 2", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("G-1", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("F2abc", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("Gx", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("G99999999999", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("E+1", inv));
+        Assert.ThrowsExactly<FormatException>(() => value.ToString("F2.0", inv));
     }
 
     [TestMethod]
